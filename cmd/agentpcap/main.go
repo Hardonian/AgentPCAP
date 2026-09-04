@@ -125,6 +125,8 @@ Options:
   --no-browser              Do not open browser automatically
   --listen <addr>           Bind address for web viewer (default: 127.0.0.1:9477)
   --output <path>           Destination path for .apcap capture file
+  --timeout <duration>      Duration to run demo before auto-shutdown (e.g. 5s)
+  --exit                    Generate capture fixture and exit immediately
   --json                    Output structured JSON format
   --markdown                Output GitHub markdown format
   --capture-content         Explicitly capture payloads (default: metadata-only)`)
@@ -251,6 +253,7 @@ func handleDemo(args []string) {
 		noBrowser     bool
 		outputPath    string
 		exitImmediate bool
+		timeout       time.Duration
 	)
 
 	fs := flag.NewFlagSet("demo", flag.ExitOnError)
@@ -258,6 +261,7 @@ func handleDemo(args []string) {
 	fs.BoolVar(&noBrowser, "no-browser", false, "Disable opening browser")
 	fs.StringVar(&outputPath, "output", "demo.apcap", "Output .apcap file path")
 	fs.BoolVar(&exitImmediate, "exit", false, "Exit after generating demo capture")
+	fs.DurationVar(&timeout, "timeout", 0, "Duration to run demo before auto-shutdown (e.g. 5s, 30s)")
 	_ = fs.Parse(args)
 
 	fmt.Println("AgentPCAP Demo — Local Multi-Agent Simulation")
@@ -282,6 +286,7 @@ func handleDemo(args []string) {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+	defer func() { _ = webSrv.Stop(context.Background()) }()
 
 	fmt.Printf("✓ capture started\n")
 	fmt.Printf("✓ finance-agent\n")
@@ -303,7 +308,13 @@ func handleDemo(args []string) {
 	fmt.Printf("✓ Saved capture fixture to: %s\n", outputPath)
 
 	if exitImmediate {
-		_ = webSrv.Stop(context.Background())
+		return
+	}
+
+	if timeout > 0 {
+		fmt.Printf("Running demo server for %s...\n", timeout)
+		time.Sleep(timeout)
+		fmt.Println("\nDemo duration elapsed. Stopped.")
 		return
 	}
 
@@ -315,12 +326,27 @@ func handleDemo(args []string) {
 }
 
 func handleOpen(args []string) {
-	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Usage: agentpcap open <file.apcap>")
+	var (
+		listenAddr string
+		noBrowser  bool
+	)
+
+	fs := flag.NewFlagSet("open", flag.ExitOnError)
+	fs.StringVar(&listenAddr, "listen", "127.0.0.1:9477", "Web viewer address")
+	fs.BoolVar(&noBrowser, "no-browser", false, "Disable opening browser")
+	_ = fs.Parse(args)
+
+	files := fs.Args()
+	if len(files) == 0 {
+		fmt.Fprintln(os.Stderr, "Usage: agentpcap open [flags] <file.apcap>")
 		os.Exit(1)
 	}
-	capFile := args[0]
+	capFile := files[0]
 	parsedCap := openCaptureOrExit(capFile)
+
+	if isExternalAddress(listenAddr) {
+		fmt.Printf("⚠️  SECURITY WARNING: Binding web viewer to external address '%s'. Captures may be accessible on the local network.\n\n", listenAddr)
+	}
 
 	session := capture.NewSession(capture.SessionConfig{
 		CaptureID:   parsedCap.Manifest.CaptureID,
@@ -333,16 +359,19 @@ func handleOpen(args []string) {
 
 	costEng := cost.NewEngine()
 	otlpRec := otlp.NewReceiver(costEng)
-	webSrv := server.NewServer(session, otlpRec, server.ServerConfig{ListenAddr: "127.0.0.1:9477"})
+	webSrv := server.NewServer(session, otlpRec, server.ServerConfig{ListenAddr: listenAddr})
 	if err := webSrv.Start(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error starting viewer: %v\n", err)
 		os.Exit(1)
 	}
+	defer func() { _ = webSrv.Stop(context.Background()) }()
 
 	fmt.Printf("\n✓ Opened: %s (%d events)\n", capFile, len(parsedCap.Events))
 	fmt.Printf("✓ Local Viewer: %s\n\n", webSrv.URL())
 
-	_ = browser.Open(webSrv.URL())
+	if !noBrowser {
+		_ = browser.Open(webSrv.URL())
+	}
 
 	fmt.Println("Press Ctrl+C to stop viewer.")
 	sigCh := make(chan os.Signal, 1)
@@ -439,16 +468,42 @@ func handleDiff(args []string) {
 }
 
 func handleExplain(args []string) {
-	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Usage: agentpcap explain <file.apcap>")
+	var jsonOutput bool
+	var files []string
+	for _, arg := range args {
+		if arg == "--json" || arg == "-json" {
+			jsonOutput = true
+		} else if !strings.HasPrefix(arg, "-") {
+			files = append(files, arg)
+		}
+	}
+
+	if len(files) == 0 {
+		fmt.Fprintln(os.Stderr, "Usage: agentpcap explain <file.apcap> [--json]")
 		os.Exit(1)
 	}
 
-	cap := openCaptureOrExit(args[0])
+	cap := openCaptureOrExit(files[0])
 
 	cp := analyzer.AnalyzeCriticalPath(cap.Events)
 	pEng := pathology.NewEngine()
 	findings := pEng.Analyze(cap.Events)
+
+	if jsonOutput {
+		out := map[string]any{
+			"capture_id":     cap.Manifest.CaptureID,
+			"duration_ms":    cap.Metadata.TotalDurationMs,
+			"events_count":   len(cap.Events),
+			"error_count":    cap.Metadata.ErrorCount,
+			"total_tokens":   cap.Metadata.TotalTokens.TotalTokens,
+			"estimated_cost": cap.Metadata.TotalCost,
+			"critical_path":  cp,
+			"findings":       findings,
+		}
+		b, _ := json.MarshalIndent(out, "", "  ")
+		fmt.Println(string(b))
+		return
+	}
 
 	fmt.Printf("\nAGENTPCAP EXPLAIN: %s\n", cap.Manifest.CaptureID)
 	fmt.Println("======================================================================")
@@ -568,17 +623,20 @@ func handleVersion() {
 
 func handleSummary(args []string) {
 	var markdownOutput bool
+	var jsonOutput bool
 	var files []string
 	for _, arg := range args {
 		if arg == "--markdown" || arg == "-markdown" {
 			markdownOutput = true
+		} else if arg == "--json" || arg == "-json" {
+			jsonOutput = true
 		} else if !strings.HasPrefix(arg, "-") {
 			files = append(files, arg)
 		}
 	}
 
 	if len(files) == 0 {
-		fmt.Fprintln(os.Stderr, "Usage: agentpcap summary <file.apcap> [--markdown]")
+		fmt.Fprintln(os.Stderr, "Usage: agentpcap summary <file.apcap> [--markdown|--json]")
 		os.Exit(1)
 	}
 
@@ -586,6 +644,22 @@ func handleSummary(args []string) {
 
 	pEng := pathology.NewEngine()
 	findings := pEng.Analyze(cap.Events)
+
+	if jsonOutput {
+		out := map[string]any{
+			"capture_id":     cap.Manifest.CaptureID,
+			"duration_s":     cap.Metadata.TotalDurationMs / 1000.0,
+			"total_tokens":   cap.Metadata.TotalTokens.TotalTokens,
+			"estimated_cost": cap.Metadata.TotalCost,
+			"events":         len(cap.Events),
+			"errors":         cap.Metadata.ErrorCount,
+			"pathologies":    len(findings),
+			"findings":       findings,
+		}
+		b, _ := json.MarshalIndent(out, "", "  ")
+		fmt.Println(string(b))
+		return
+	}
 
 	if markdownOutput {
 		fmt.Printf("### AgentPCAP Capture Summary: `%s`\n\n", cap.Manifest.CaptureID)
@@ -738,23 +812,57 @@ func handleCheck(args []string) {
 }
 
 func handleValidate(args []string) {
-	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Usage: agentpcap validate <file.apcap>")
+	var jsonOutput bool
+	var files []string
+	for _, arg := range args {
+		if arg == "--json" || arg == "-json" {
+			jsonOutput = true
+		} else if !strings.HasPrefix(arg, "-") {
+			files = append(files, arg)
+		}
+	}
+
+	if len(files) == 0 {
+		fmt.Fprintln(os.Stderr, "Usage: agentpcap validate <file.apcap> [--json]")
 		os.Exit(1)
 	}
 
-	cap, err := apcap.Open(args[0])
+	target := files[0]
+	cap, err := apcap.Open(target)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "❌ Validation failed: %v\n", err)
+		if jsonOutput {
+			out, _ := json.Marshal(map[string]any{"valid": false, "file": target, "error": err.Error()})
+			fmt.Println(string(out))
+		} else {
+			fmt.Fprintf(os.Stderr, "❌ Validation failed: %v\n", err)
+		}
 		os.Exit(1)
 	}
 
 	if cap.Manifest.Format != apcap.FormatIdentifier {
-		fmt.Fprintf(os.Stderr, "❌ Invalid format identifier: %s\n", cap.Manifest.Format)
+		if jsonOutput {
+			out, _ := json.Marshal(map[string]any{"valid": false, "file": target, "error": fmt.Sprintf("invalid format identifier: %s", cap.Manifest.Format)})
+			fmt.Println(string(out))
+		} else {
+			fmt.Fprintf(os.Stderr, "❌ Invalid format identifier: %s\n", cap.Manifest.Format)
+		}
 		os.Exit(1)
 	}
 
-	fmt.Printf("✓ Capture '%s' conforms to APCAP v%s\n", args[0], cap.Manifest.FormatVersion)
+	if jsonOutput {
+		out, _ := json.MarshalIndent(map[string]any{
+			"valid":           true,
+			"file":            target,
+			"format":          cap.Manifest.Format,
+			"format_version":  cap.Manifest.FormatVersion,
+			"hashes_verified": len(cap.Manifest.Hashes),
+			"events_count":    len(cap.Events),
+		}, "", "  ")
+		fmt.Println(string(out))
+		return
+	}
+
+	fmt.Printf("✓ Capture '%s' conforms to APCAP v%s\n", target, cap.Manifest.FormatVersion)
 	fmt.Printf("✓ Hashes verified: %d file checksums OK\n", len(cap.Manifest.Hashes))
 	fmt.Printf("✓ Parsed %d events safely\n", len(cap.Events))
 }
@@ -868,6 +976,10 @@ func truncateString(s string, maxLen int) string {
 }
 
 func openCaptureOrExit(filePath string) *apcap.Capture {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "Error: Capture file '%s' does not exist.\n", filePath)
+		os.Exit(1)
+	}
 	cap, err := apcap.Open(filePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: Failed to open capture file '%s'.\n\nDetails:\n  %v\n\nTry:\n  agentpcap validate %s\n", filePath, err, filePath)
