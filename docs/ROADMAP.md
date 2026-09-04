@@ -5,6 +5,7 @@ AgentPCAP focuses on delivering a lean, fast, local-first debugger for AI agents
 ---
 
 ## v1.0 (Current Release)
+
 - [x] Pure single-binary distribution with embedded Web UI (`go:embed`).
 - [x] Open `.apcap` streaming ZIP container format with JSON schema.
 - [x] Protocol parsers for MCP (Model Context Protocol) and A2A (Agent-to-Agent).
@@ -19,6 +20,7 @@ AgentPCAP focuses on delivering a lean, fast, local-first debugger for AI agents
 ---
 
 ## v1.x (Near-Term)
+
 - **Extended Protocol Adapters**:
   - Direct LangChain/LangGraph streaming event adapter.
   - CrewAI and AutoGen event exporters.
@@ -33,6 +35,7 @@ AgentPCAP focuses on delivering a lean, fast, local-first debugger for AI agents
 ---
 
 ## Future Research (v2.0+)
+
 - **Linux eBPF Socket Tap**:
   - Optional kernel-level socket tap (`agentpcap tap --pid <PID>`) to measure low-level TCP connection latency and DNS resolution timing without TLS interception.
 - **Cross-Run Anomaly Regression Clustering**:
