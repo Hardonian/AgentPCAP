@@ -1,28 +1,20 @@
-<div align="center">
-
 # AgentPCAP
 
-### Wireshark for AI agents.
+## Wireshark for AI agents
 
-<p align="center">
-  <strong>Capture A2A, MCP, model and tool traffic in one local timeline.</strong><br>
-  <em>No account. No API key. One Go binary.</em>
-</p>
-
-```bash
-agentpcap run -- ./my-agent
-```
-
-<p align="center">
-  <img src="docs/assets/agentpcap_demo.webp" alt="AgentPCAP Live Demo Walkthrough" width="850">
-</p>
+> **Capture A2A, MCP, model and tool traffic in one local timeline.**  
+> *No account. No API key. One Go binary.*
 
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-v1.0.0_Ready-emerald)](CHANGELOG.md)
 [![Privacy](https://img.shields.io/badge/Privacy-Metadata_Only_Default-green)](docs/PRIVACY.md)
 
-</div>
+```bash
+agentpcap run -- ./my-agent
+```
+
+![AgentPCAP Live Demo Walkthrough](docs/assets/agentpcap_demo.webp)
 
 ---
 
@@ -31,6 +23,7 @@ agentpcap run -- ./my-agent
 When an autonomous agent system fails, lags, or burns thousands of tokens, debugging typically involves digging through disparate logs across Model Context Protocol (MCP) servers, Agent-to-Agent (A2A) tasks, and raw LLM API calls.
 
 **AgentPCAP** gives you instant, protocol-aware visibility into your entire agent network:
+
 - **Zero-Config Launch**: Run `agentpcap run -- ./my-agent` or explore the simulated `agentpcap demo`.
 - **Live Visual Debugging**: Animated agent topology, interactive packet lists, waterfall execution timelines, and critical path analysis.
 - **Cost & Token Flamegraphs**: Hierarchical breakdown of where tokens, latency, and dollars were spent across agents and tools.
@@ -42,16 +35,19 @@ When an autonomous agent system fails, lags, or burns thousands of tokens, debug
 ## 📸 Real UI in Action
 
 ### 1. Live Agent Topology
+
 *Visual graph of agents, MCP servers, models, and external tools with animated request pulses and click-to-inspect edge telemetry.*
 
 ![AgentPCAP Live Topology](docs/assets/topology.png)
 
 ### 2. Waterfall Execution Timeline & Critical Path
+
 *Inspect nested parent-child task delegations, identify concurrent spans, and pinpoint the longest wall-clock execution bottleneck.*
 
 ![AgentPCAP Waterfall Timeline](docs/assets/waterfall.png)
 
 ### 3. Hierarchical Cost & Token Flamegraphs
+
 *Instantly identify which agent, model, or tool call dominated your token budget or cloud spend.*
 
 ![AgentPCAP Cost Flamegraph](docs/assets/flamegraph_cost.png)
