@@ -16,6 +16,7 @@ import (
 
 	"github.com/agentpcap/agentpcap/internal/analyzer"
 	"github.com/agentpcap/agentpcap/internal/capture"
+	"github.com/agentpcap/agentpcap/internal/demo"
 	"github.com/agentpcap/agentpcap/internal/pathology"
 	"github.com/agentpcap/agentpcap/internal/protocols/otlp"
 	"github.com/agentpcap/agentpcap/pkg/apcap"
@@ -99,6 +100,8 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/flamegraph", s.handleGetFlamegraph)
 	mux.HandleFunc("/api/stream", s.handleSSEStream)
 	mux.HandleFunc("/api/upload", s.handleUpload)
+	mux.HandleFunc("/api/simulate", s.handleSimulate)
+	mux.HandleFunc("/api/load-demo", s.handleLoadDemo)
 	mux.HandleFunc("/v1/traces", s.handleOTLPTraces)
 
 	// Static Web Assets with SPA Fallback
@@ -336,6 +339,27 @@ func (s *Server) handleOTLPTraces(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{}`))
+}
+
+func (s *Server) handleSimulate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	go demo.RunDemoLive(s.session)
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "simulating"})
+}
+
+func (s *Server) handleLoadDemo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost && r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	s.session.Reset()
+	demo.RunDemo(s.session)
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "loaded"})
 }
 
 // Dummy helper

@@ -9,6 +9,8 @@ interface HeaderProps {
   setActiveTab: (tab: string) => void;
   isLive: boolean;
   onOpenFile: () => void;
+  onRunSimulation: () => void;
+  isSimulating: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,6 +21,8 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveTab,
   isLive,
   onOpenFile,
+  onRunSimulation,
+  isSimulating,
 }) => {
   const tabs = [
     { id: 'topology', label: 'Topology', icon: '⛶' },
@@ -156,6 +160,29 @@ export const Header: React.FC<HeaderProps> = ({
             {errorCount}
           </span>
         </div>
+
+        <button
+          className="btn btn-primary"
+          onClick={onRunSimulation}
+          disabled={isSimulating}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            backgroundColor: isSimulating ? 'rgba(56, 189, 248, 0.2)' : '#0284c7',
+            color: '#ffffff',
+            border: '1px solid #38bdf8',
+            boxShadow: isSimulating ? '0 0 12px rgba(56, 189, 248, 0.5)' : 'none',
+            fontWeight: 700,
+            fontSize: 12,
+            padding: '4px 10px',
+            cursor: isSimulating ? 'not-allowed' : 'pointer',
+          }}
+          title="Stream live multi-agent simulation"
+        >
+          <span>{isSimulating ? '⏳' : '▶'}</span>
+          <span>{isSimulating ? 'Simulating...' : 'Simulate Run'}</span>
+        </button>
 
         <button className="btn" onClick={onOpenFile} title="Open an .apcap file">
           📂 Open

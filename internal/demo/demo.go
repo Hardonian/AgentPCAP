@@ -266,3 +266,18 @@ func RunDemo(session *capture.Session) {
 		session.Ingest(ev)
 	}
 }
+
+// RunDemoLive streams simulated events into the session with real-time delays for live browser demonstration.
+func RunDemoLive(session *capture.Session) {
+	session.Reset()
+	baseTime := time.Now().UTC()
+	events := GenerateSimulationEvents(baseTime)
+
+	for i, ev := range events {
+		// Stagger events with realistic visual delays between 100ms and 250ms
+		time.Sleep(120 * time.Millisecond)
+		ev.Timestamp = baseTime.Add(time.Duration(i*120) * time.Millisecond)
+		session.Ingest(ev)
+	}
+}
+

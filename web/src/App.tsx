@@ -20,6 +20,7 @@ export const App: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<APCAPEvent | null>(null);
   const [isLive, setIsLive] = useState(true);
   const [dragOver, setDragOver] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   // Fetch initial session state
   const fetchSession = useCallback(async () => {
@@ -51,6 +52,29 @@ export const App: React.FC = () => {
       }
     } catch {}
   }, []);
+
+  const handleRunSimulation = async () => {
+    setIsSimulating(true);
+    setEvents([]);
+    try {
+      await fetch('/api/simulate', { method: 'POST' });
+    } catch (err) {
+      console.error('Failed to trigger simulation', err);
+    }
+    setTimeout(() => {
+      setIsSimulating(false);
+      fetchSession();
+    }, 2000);
+  };
+
+  const handleLoadDemo = async () => {
+    try {
+      await fetch('/api/load-demo', { method: 'POST' });
+      fetchSession();
+    } catch (err) {
+      console.error('Failed loading demo', err);
+    }
+  };
 
   useEffect(() => {
     fetchSession();
@@ -141,10 +165,90 @@ export const App: React.FC = () => {
         setActiveTab={setActiveTab}
         isLive={isLive}
         onOpenFile={handleOpenFileInput}
+        onRunSimulation={handleRunSimulation}
+        isSimulating={isSimulating}
       />
 
       {/* Main View Area */}
       <main style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {events.length === 0 && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(10, 14, 23, 0.95)',
+            zIndex: 10,
+            padding: 32,
+          }}>
+            <div style={{
+              maxWidth: 680,
+              width: '100%',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 16,
+              padding: 36,
+              textAlign: 'center',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(56, 189, 248, 0.08)',
+            }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: 16, backgroundColor: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', marginBottom: 20 }}>
+                <span style={{ fontSize: 28 }}>🔍</span>
+              </div>
+              <h2 style={{ fontSize: 26, fontWeight: 800, color: '#f8fafc', margin: '0 0 10px 0', letterSpacing: '-0.02em' }}>
+                Wireshark for AI Agents
+              </h2>
+              <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, margin: '0 0 24px 0' }}>
+                Capture A2A, MCP, model, and tool traffic in one local timeline. See the whole agent graph live with zero external accounts or API keys.
+              </p>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 28, flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleRunSimulation}
+                  disabled={isSimulating}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    backgroundColor: '#0284c7',
+                    border: '1px solid #38bdf8',
+                    boxShadow: '0 0 20px rgba(56, 189, 248, 0.4)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span>{isSimulating ? '⏳' : '▶'}</span>
+                  <span>{isSimulating ? 'Streaming Simulation...' : 'Run Live Simulation'}</span>
+                </button>
+                <button
+                  className="btn"
+                  onClick={handleLoadDemo}
+                  style={{ padding: '10px 18px', fontSize: 14, fontWeight: 600 }}
+                >
+                  ⚡ Load Demo Capture
+                </button>
+                <button
+                  className="btn"
+                  onClick={handleOpenFileInput}
+                  style={{ padding: '10px 18px', fontSize: 14, fontWeight: 600 }}
+                >
+                  📂 Open .apcap File
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span className="badge" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)' }}>A2A Delegation</span>
+                <span className="badge" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)' }}>MCP JSON-RPC</span>
+                <span className="badge" style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#22d3ee', border: '1px solid rgba(6, 182, 212, 0.3)' }}>Gemini & OpenAI</span>
+                <span className="badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>Cost Flamegraphs</span>
+                <span className="badge" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}>Pathology Detection</span>
+              </div>
+            </div>
+          </div>
+        )}
         {activeTab === 'topology' && (
           <TopologyView events={events} onSelectEvent={setSelectedEvent} />
         )}

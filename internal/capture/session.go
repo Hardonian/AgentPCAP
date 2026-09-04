@@ -199,3 +199,23 @@ func (s *Session) Close() error {
 	}
 	return nil
 }
+
+// Reset clears existing events and reinitializes metadata for a fresh run.
+func (s *Session) Reset() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.events = make([]apcap.Event, 0, 1024)
+	s.manifest.CreatedAt = time.Now().UTC()
+	s.manifest.CompletedAt = time.Time{}
+	s.manifest.ProtocolsSeen = make([]apcap.Protocol, 0)
+	s.manifest.EventCount = 0
+	s.metadata.TotalEvents = 0
+	s.metadata.TotalTokens = 0
+	s.metadata.TotalCost = 0
+	s.metadata.ErrorCount = 0
+	s.metadata.AgentCount = 0
+	s.metadata.ToolCount = 0
+	s.metadata.ModelCount = 0
+	s.closed = false
+}
+
