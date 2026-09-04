@@ -1,5 +1,3 @@
-
-+`-++	1q	+121247
 package main
 
 import (

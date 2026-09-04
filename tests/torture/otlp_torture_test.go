@@ -68,13 +68,13 @@ func TestOTLPTorture_Corpus(t *testing.T) {
 				}]
 			}]
 		}`), false},
-		{"huge string in span name", []byte(fmt.Sprintf(`{
+		{"huge string in span name", fmt.Appendf(nil, `{
 			"resourceSpans": [{
 				"scopeSpans": [{
 					"spans": [{"name": "%s"}]
 				}]
 			}]
-		}`, strings.Repeat("SPAN_", 10000))), false},
+		}`, strings.Repeat("SPAN_", 10000)), false},
 	}
 
 	for _, tc := range cases {

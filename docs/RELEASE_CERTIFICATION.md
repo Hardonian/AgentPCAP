@@ -18,7 +18,7 @@ Every invariant defined in `AGENTS.md` and `spec/README.md` is strictly enforced
 ## Comprehensive 18-Category Audit Matrix
 
 | # | Audit Category | Core Verification Criteria | Evidence / Test Suite | Result |
-|:---|:---|:---|:---|:---:|
+| :--- | :--- | :--- | :--- | :---: |
 | **1** | **Build & Compilation** | Clean multi-platform build without CGO (`linux/amd64`, `linux/arm64`, `darwin/arm64`, `darwin/amd64`, `windows/amd64`). Embedded web assets via `web.DistFS` (`go:embed`). | `go build -ldflags="-s -w" ./cmd/agentpcap` (0 warnings, 0 errors). | **PASS** |
 | **2** | **Go Code Quality** | Idiomatic Go code, zero deadlocks, zero unhandled errors, strict lint conformance. | `go vet ./...` clean; all packages pass with exit code 0. | **PASS** |
 | **3** | **Format Integrity (.apcap)** | Standardized container (ZIP + `manifest.json` + `events.jsonl` + `metadata.json` + `attachments/`). SHA-256 integrity verification, schema validation. | `spec/schema_test.go`, `pkg/apcap/recovery_test.go`, `spec/vectors/` validation. | **PASS** |
@@ -43,47 +43,56 @@ Every invariant defined in `AGENTS.md` and `spec/README.md` is strictly enforced
 ## Detailed Findings by Category
 
 ### Category 1: Build & Compilation
+
 - Static Go binary compiled with `-ldflags="-s -w"`.
 - Web frontend statically compiled via `pnpm build` into `web/dist` and embedded via Go's `embed.FS`.
 - Zero runtime CGO dependency (`CGO_ENABLED=0` compatible).
 
 ### Category 2: Go Code Quality
+
 - All Go files formatted via `gofmt`.
 - Zero unchecked error panics in packet ingestion pathways.
 - Clean package structure adhering strictly to `AGENTS.md`.
 
 ### Category 3: Format Integrity (.apcap)
+
 - Specification version `1.0.0`.
 - Standard ZIP container containing `manifest.json`, `events.jsonl`, `metadata.json`, and optional `attachments/`.
 - Validated with SHA-256 integrity hashes on write and read.
 - Crash-interrupted files recover cleanly via line-by-line JSONL streaming parser.
 
 ### Category 4: MCP Protocol Support
+
 - Conforms to Model Context Protocol specification.
 - Handles `initialize`, `notifications/initialized`, `tools/list`, `tools/call`, `resources/list`, `prompts/list`.
 - Resilient against 100KB method names, 1MB payloads, and 100-level deeply nested JSON schema definitions.
 
 ### Category 5: A2A Protocol Support
+
 - Conforms to Agent-to-Agent communication patterns.
 - Handles task creation, delegation chains up to 50 levels deep, state progression, and cancel requests.
 - Resilient against XSS injections in agent names, RTL Unicode control characters, and malformed task states.
 
 ### Category 6: OTel GenAI Support
+
 - Ingests OpenTelemetry GenAI spans at `/v1/traces`.
 - Maps attributes: `gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.prompt_tokens`, `gen_ai.usage.completion_tokens`.
 - Exports capture events back to valid OTLP JSON.
 
 ### Category 7: Web Viewer
+
 - Embedded single-page application built with React, TypeScript, and Tailwind CSS.
 - Zero calls to external CDNs, fonts, or third-party analytics.
 - Real-time updates delivered via Server-Sent Events (SSE) `/api/events/live`.
 
 ### Category 8: Diff Engine
+
 - Golden test coverage for identical captures, regressions, and improvements.
 - Metrics diffed: duration, events, token counts, cost estimate, error count.
 - Structured output available in human-readable table or `--json` format for automated CI gates.
 
 ### Category 9: Deterministic Explain
+
 - Rule-based pathology detection without LLMs:
   - `RETRY_STORM`
   - `AGENT_LOOP`
@@ -100,35 +109,42 @@ Every invariant defined in `AGENTS.md` and `spec/README.md` is strictly enforced
   4. `SUGGESTED INVESTIGATION`
 
 ### Category 10: Redaction Engine
+
 - Centralized token and secret scanner with automated masking.
 - Masks API keys (`sk-...`, `AIza...`, `sk-ant-...`, `ghp_...`), JWT bearer tokens, and sensitive headers.
 - Verified with fuzzing over 200k variations without crashing.
 
 ### Category 11: Privacy Invariants
+
 - Default mode is metadata-only: prompt texts, response texts, and tool arguments are omitted unless `--capture-content` is passed.
 - Explicit console warnings displayed whenever `--capture-content` is active.
 
 ### Category 12: Security Invariants
+
 - Zero shell execution: `agentpcap run -- <command>` uses `exec.CommandContext(ctx, cmd[0], cmd[1:]...)`.
 - Default binding to loopback interface `127.0.0.1:9477`.
 - Explicit warning logged whenever binding to non-loopback interfaces (`0.0.0.0` or public IPs).
 
 ### Category 13: Hostile File Hardening
+
 - Reject Zip-slip traversal (`../`, `/`, `\`, Windows drive paths `C:\...`).
 - 128 MB max entry size limit; 256 MB max uncompressed archive limit.
 - Defensive handling of zero-byte files, truncated ZIP headers, and missing manifests.
 
 ### Category 14: Race Condition Safety
+
 - Passed `go test -race ./...` across all internal packages and torture tests.
 - Channel backpressure handles up to 5,000 bursts without deadlocking subscriber threads.
 
 ### Category 15: Fuzzing Suites
+
 - `FuzzApcapReader` (archive decompression and validation)
 - `FuzzMCPParser` (JSON-RPC message decoding)
 - `FuzzA2AParser` (A2A event normalization)
 - `FuzzRedactor` (Secret scrubbing patterns)
 
 ### Category 16: Clean-Room CLI Verification
+
 - `agentpcap doctor`: System checks pass.
 - `agentpcap demo --exit --output demo.apcap`: Generates valid multi-agent capture.
 - `agentpcap validate demo.apcap`: Confirms 100% schema and hash integrity.
@@ -137,6 +153,7 @@ Every invariant defined in `AGENTS.md` and `spec/README.md` is strictly enforced
 - `agentpcap report demo.apcap -o report.html`: Standalone offline HTML report generated.
 
 ### Category 17: Canonical Test Vectors
+
 - Six reference vectors in `spec/vectors/`:
   1. `minimal`: Basic ping-pong task.
   2. `mcp`: MCP tool discovery and invocation.
@@ -146,6 +163,7 @@ Every invariant defined in `AGENTS.md` and `spec/README.md` is strictly enforced
   6. `incomplete`: Crash-recovery / partial capture.
 
 ### Category 18: Documentation Completeness
+
 - Comprehensive and synchronized documentation across root and `docs/`:
   - `README.md`
   - `docs/QUICKSTART.md`

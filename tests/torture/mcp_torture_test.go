@@ -34,8 +34,8 @@ func TestMCPTorture_Corpus(t *testing.T) {
 		{"missing jsonrpc field", []byte(`{"id": 1, "method": "tools/list"}`), true},
 
 		// 3. Huge string and payload abuse
-		{"100KB method name", []byte(fmt.Sprintf(`{"jsonrpc": "2.0", "id": 1, "method": "%s"}`, strings.Repeat("M", 100000))), false},
-		{"1MB argument payload", []byte(fmt.Sprintf(`{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "bulk", "arguments": {"blob": "%s"}}}`, strings.Repeat("Z", 1000000))), false},
+		{"100KB method name", fmt.Appendf(nil, `{"jsonrpc": "2.0", "id": 1, "method": "%s"}`, strings.Repeat("M", 100000)), false},
+		{"1MB argument payload", fmt.Appendf(nil, `{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "bulk", "arguments": {"blob": "%s"}}}`, strings.Repeat("Z", 1000000)), false},
 
 		// 4. Duplicate and deeply nested schemas
 		{"100 level nested arguments", func() []byte {
@@ -56,7 +56,7 @@ func TestMCPTorture_Corpus(t *testing.T) {
 
 		// 5. Error edge cases
 		{"error with negative code and null message", []byte(`{"jsonrpc": "2.0", "id": 1, "error": {"code": -32700}}`), false},
-		{"error with massive data trace", []byte(fmt.Sprintf(`{"jsonrpc": "2.0", "id": 1, "error": {"code": -32603, "message": "panic", "data": {"trace": "%s"}}}`, strings.Repeat("E", 50000))), false},
+		{"error with massive data trace", fmt.Appendf(nil, `{"jsonrpc": "2.0", "id": 1, "error": {"code": -32603, "message": "panic", "data": {"trace": "%s"}}}`, strings.Repeat("E", 50000)), false},
 
 		// 6. Discovery storms (repeated tool entries)
 		{"tools/list response with 2000 tools", func() []byte {
