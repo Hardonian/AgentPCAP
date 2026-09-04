@@ -37,6 +37,12 @@ func TestGenerateCanonicalVectors(t *testing.T) {
 
 	// 6. INCOMPLETE VECTOR
 	generateIncompleteVector(t, vectorsDir, baseTime)
+
+	// 7. OTEL VECTOR
+	generateOTELVector(t, vectorsDir, baseTime)
+
+	// 8. RETRIES VECTOR
+	generateRetriesVector(t, vectorsDir, baseTime)
 }
 
 func generateMinimalVector(t *testing.T, dir string, baseTime time.Time) {
@@ -422,4 +428,160 @@ func saveExpectedJSON(t *testing.T, dir string, cap *apcap.Capture) {
 	if err := os.WriteFile(filepath.Join(dir, "expected.json"), b, 0644); err != nil {
 		t.Fatalf("failed writing expected json: %v", err)
 	}
+}
+
+func generateOTELVector(t *testing.T, dir string, baseTime time.Time) {
+	vDir := filepath.Join(dir, "otel")
+	_ = os.MkdirAll(vDir, 0755)
+	capPath := filepath.Join(vDir, "otel.apcap")
+
+	cap := &apcap.Capture{
+		Manifest: apcap.Manifest{
+			Format:        apcap.FormatIdentifier,
+			FormatVersion: "1.0.0",
+			CaptureID:     "vector_otel",
+			CaptureMode:   "proxy",
+			RedactionMode: "metadata_only",
+			CreatedAt:     baseTime,
+			CompletedAt:   baseTime.Add(250 * time.Millisecond),
+		},
+		Metadata: apcap.CaptureMetadata{
+			Title:           "OpenTelemetry GenAI Ingestion Vector",
+			TotalDurationMs: 250.0,
+			TotalCost:       0.0015,
+			TotalTokens: apcap.TokenUsage{
+				InputTokens:  120,
+				OutputTokens: 80,
+				TotalTokens:  200,
+			},
+		},
+		Events: []apcap.Event{
+			{
+				ID:          "span_001",
+				TraceID:     "4bf92f3577b34da6a3ce929d0e0e4736",
+				Timestamp:   baseTime,
+				DurationMs:  250.0,
+				Type:        apcap.EventModelRequest,
+				Protocol:    apcap.ProtocolOTLP,
+				Operation:   "chat",
+				Source:      apcap.Endpoint{Name: "researcher-agent", Kind: "agent"},
+				Destination: apcap.Endpoint{Name: "gemini-1.5-pro", Kind: "model"},
+				Status:      apcap.StatusOK,
+				Provenance:  apcap.ProvenanceOTel,
+				Tokens: &apcap.TokenUsage{
+					InputTokens:  120,
+					OutputTokens: 80,
+					TotalTokens:  200,
+				},
+				Attributes: map[string]any{
+					"gen_ai.system":              "gemini",
+					"gen_ai.request.model":       "gemini-1.5-pro",
+					"gen_ai.usage.prompt_tokens": float64(120),
+					"gen_ai.usage.output_tokens": float64(80),
+				},
+			},
+		},
+	}
+
+	if err := apcap.Save(capPath, cap); err != nil {
+		t.Fatalf("failed saving otel vector: %v", err)
+	}
+	saveExpectedJSON(t, vDir, cap)
+}
+
+func generateRetriesVector(t *testing.T, dir string, baseTime time.Time) {
+	vDir := filepath.Join(dir, "retries")
+	_ = os.MkdirAll(vDir, 0755)
+	capPath := filepath.Join(vDir, "retries.apcap")
+
+	cap := &apcap.Capture{
+		Manifest: apcap.Manifest{
+			Format:        apcap.FormatIdentifier,
+			FormatVersion: "1.0.0",
+			CaptureID:     "vector_retries",
+			CaptureMode:   "simulation",
+			RedactionMode: "metadata_only",
+			CreatedAt:     baseTime,
+			CompletedAt:   baseTime.Add(1800 * time.Millisecond),
+		},
+		Metadata: apcap.CaptureMetadata{
+			Title:           "Deterministic Retry Storm Pathology Vector",
+			TotalDurationMs: 1800.0,
+			ErrorCount:      2,
+			TotalCost:       0.003,
+			TotalTokens: apcap.TokenUsage{
+				InputTokens:  300,
+				OutputTokens: 50,
+				TotalTokens:  350,
+			},
+		},
+		Events: []apcap.Event{
+			{
+				ID:          "ev_retry_1",
+				TraceID:     "tr_retry",
+				ParentID:    "task_root",
+				Timestamp:   baseTime,
+				DurationMs:  400.0,
+				Type:        apcap.EventModelRequest,
+				Protocol:    apcap.ProtocolModel,
+				Operation:   "generateContent",
+				Source:      apcap.Endpoint{Name: "data-agent", Kind: "agent"},
+				Destination: apcap.Endpoint{Name: "gemini-1.5-flash", Kind: "model"},
+				Status:      apcap.StatusError,
+				Provenance:  apcap.ProvenanceObserved,
+				Attributes: map[string]any{
+					"http.status_code": float64(429),
+					"error.reason":     "RESOURCE_EXHAUSTED",
+					"model":            "gemini-1.5-flash",
+				},
+			},
+			{
+				ID:          "ev_retry_2",
+				TraceID:     "tr_retry",
+				ParentID:    "task_root",
+				Timestamp:   baseTime.Add(500 * time.Millisecond),
+				DurationMs:  450.0,
+				Type:        apcap.EventModelRequest,
+				Protocol:    apcap.ProtocolModel,
+				Operation:   "generateContent",
+				Source:      apcap.Endpoint{Name: "data-agent", Kind: "agent"},
+				Destination: apcap.Endpoint{Name: "gemini-1.5-flash", Kind: "model"},
+				Status:      apcap.StatusError,
+				Provenance:  apcap.ProvenanceObserved,
+				Attributes: map[string]any{
+					"http.status_code": float64(429),
+					"error.reason":     "RESOURCE_EXHAUSTED",
+					"model":            "gemini-1.5-flash",
+				},
+			},
+			{
+				ID:          "ev_retry_3",
+				TraceID:     "tr_retry",
+				ParentID:    "task_root",
+				Timestamp:   baseTime.Add(1100 * time.Millisecond),
+				DurationMs:  700.0,
+				Type:        apcap.EventModelRequest,
+				Protocol:    apcap.ProtocolModel,
+				Operation:   "generateContent",
+				Source:      apcap.Endpoint{Name: "data-agent", Kind: "agent"},
+				Destination: apcap.Endpoint{Name: "gemini-1.5-flash", Kind: "model"},
+				Status:      apcap.StatusOK,
+				Provenance:  apcap.ProvenanceObserved,
+				Tokens: &apcap.TokenUsage{
+					InputTokens:  100,
+					OutputTokens: 50,
+					TotalTokens:  150,
+				},
+				Attributes: map[string]any{
+					"http.status_code": float64(200),
+					"model":            "gemini-1.5-flash",
+				},
+			},
+		},
+	}
+
+	if err := apcap.Save(capPath, cap); err != nil {
+		t.Fatalf("failed saving retries vector: %v", err)
+	}
+	saveExpectedJSON(t, vDir, cap)
 }

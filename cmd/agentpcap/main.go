@@ -88,33 +88,38 @@ func main() {
 
 func printUsage() {
 	fmt.Println(`AgentPCAP — Wireshark for AI Agents
-Capture A2A, MCP, model and tool traffic. Local-first. One Go binary.
+Capture A2A, MCP, model and tool traffic in one local timeline.
+No account. No API key. One Go binary.
 
 Usage:
   agentpcap <command> [arguments]
 
-Core Commands:
+CAPTURE:
   run -- <cmd>              Run agent command as child process with capture & live viewer
-  demo                      Launch deterministic multi-agent simulation & web viewer
-  open <file.apcap>         Open capture file in local offline web viewer
-  diff <a.apcap> <b.apcap>  Compare two agent runs (latency, tokens, cost, pathologies)
-  explain <file.apcap>      Analyze critical path and detect pathologies (no LLM required)
-  doctor                    Verify local environment, ports, and protocol adapters
-  version                   Display version and runtime information
-
-Capture & Ingestion:
   proxy                     Start standalone HTTP forward capture proxy
   otlp                      Start OpenTelemetry trace ingestion receiver
-  report <in> -o <out.html> Export single-file offline HTML forensic report
 
-Analysis & CI:
-  summary <file.apcap>      Print human or markdown summary of capture
+VIEW:
+  demo                      Launch deterministic multi-agent simulation & web viewer
+  open <file.apcap>         Open capture file in local offline web viewer
+
+ANALYZE:
+  explain <file.apcap>      Analyze critical path and detect pathologies (no LLM required)
   top <file.apcap>          Rank top operations by cost, latency, tokens, or errors
+  summary <file.apcap>      Print human or markdown summary of capture
   check <file.apcap>        Assert capture thresholds against .agentpcap.yml in CI
   validate <file.apcap>     Verify .apcap schema and cryptographic SHA-256 hashes
+  report <in> -o <out.html> Export single-file offline HTML forensic report
   redact <in> -o <out>      Scrub credentials and tokens from a capture file
   inspect-redaction <file>  Scan a capture file for potential leaked secrets
   export otlp <file.apcap>  Export capture as standard OpenTelemetry trace JSON
+
+COMPARE:
+  diff <a.apcap> <b.apcap>  Compare two agent runs (latency, tokens, cost, pathologies)
+
+SYSTEM:
+  doctor                    Verify local environment, ports, and protocol adapters
+  version                   Display version, commit, and runtime information
 
 Options:
   --no-browser              Do not open browser automatically

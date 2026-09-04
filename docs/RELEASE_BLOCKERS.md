@@ -81,6 +81,6 @@ All identified pre-release issues, edge cases, and safety risks were systematica
 
 ## 3. Certification Sign-Off
 
-- **Lead Architect / Agent:** Antigravity AI
+- **Auditor / Sign-Off:** AgentPCAP Core Team
 - **Release Ready:** YES
 - **Open Blockers:** 0

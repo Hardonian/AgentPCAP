@@ -1,150 +1,110 @@
 # AgentPCAP
 
-## Wireshark for AI agents
+### Wireshark for AI agents.
 
-> **Capture A2A, MCP, model and tool traffic in one local timeline.**  
-> *No account. No API key. One Go binary.*
+`agentpcap run -- ./my-agent`
 
-[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-v1.0.0_Ready-emerald)](CHANGELOG.md)
-[![Privacy](https://img.shields.io/badge/Privacy-Metadata_Only_Default-green)](docs/PRIVACY.md)
+Capture A2A, MCP, model and tool traffic in one local timeline.
 
-![AgentPCAP Illustrative Hero](docs/assets/hero.svg)
+No account. No API key. One Go binary.
 
-```bash
-agentpcap run -- ./my-agent
-```
+[![Release](https://img.shields.io/badge/Release-v1.0.0-blue.svg)](CHANGELOG.md)
+[![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
+[![Go Report](https://img.shields.io/badge/Go-1.22+-00ADD8.svg)](https://go.dev/)
 
-<details>
-<summary>▶ <strong>Watch 10-Second Live Browser Session</strong></summary>
+[Quickstart](#4-60-second-quickstart) • [Format Spec](spec/README.md) • [Protocol Support](#11-protocol-support) • [Docs](docs/ARCHITECTURE.md)
+
+---
+
+## 1. Hero
+
+AgentPCAP is a local-first packet capture engine and interactive visual debugger designed specifically for multi-agent systems, Model Context Protocol (MCP) servers, Agent-to-Agent (A2A) tasks, and LLM APIs.
+
+![AgentPCAP Hero](docs/assets/hero.svg)
+
+---
+
+## 2. Demo Visual
+
+See the entire concept in a single offline simulation:
 
 ![AgentPCAP Live Browser Session](docs/assets/agentpcap_demo.webp)
 
-</details>
+---
+
+## 3. Why AgentPCAP
+
+When an autonomous agent system fails, hangs, or burns thousands of tokens, developers typically must stitch together disparate log streams across MCP servers, A2A tasks, model provider dashboards, and custom tool callbacks.
+
+AgentPCAP eliminates this fragmentation:
+- **Unified Capture**: Normalizes A2A, MCP, OpenAI, Gemini, Anthropic, and generic HTTP traffic into one coherent timeline.
+- **Local & Offline**: Zero telemetry, no cloud accounts, no API keys, and no database daemons.
+- **Protocol-Aware Inspection**: Deep decoding of JSON-RPC 2.0 frames, task delegation trees, and GenAI usage attributes.
+- **Deterministic Explain**: Heuristic root-cause analysis that pinpoints retry storms and recursive loops without calling external LLMs.
 
 ---
 
-## ⚡ What is AgentPCAP?
+## 4. 60-Second Quickstart
 
-When an autonomous agent system fails, lags, or burns thousands of tokens, debugging typically involves digging through disparate logs across Model Context Protocol (MCP) servers, Agent-to-Agent (A2A) tasks, and raw LLM API calls.
+### Step 1: Run the Instant Multi-Agent Demo
 
-**AgentPCAP** gives you instant, protocol-aware visibility into your entire agent network:
+Experience full protocol capture and pathology detection with zero setup:
 
-- **Zero-Config Launch**: Run `agentpcap run -- ./my-agent` or explore the simulated `agentpcap demo`.
-- **Live Visual Debugging**: Animated agent topology, interactive packet lists, waterfall execution timelines, and critical path analysis.
-- **Cost & Token Flamegraphs**: Hierarchical breakdown of where tokens, latency, and dollars were spent across agents and tools.
-- **Zero-LLM Pathology Detection**: Deterministic offline analysis (`agentpcap explain`) that detects retry storms, recursive agent loops, and duplicate tool calls without calling external models.
-- **Open Standard**: Captured in the portable, streamable `.apcap` (Agent Packet Capture) bundle format.
+```bash
+agentpcap demo
+```
+
+Your default browser automatically opens to `http://127.0.0.1:9477`.
+
+### Step 2: Capture Your Own Agent
+
+Wrap your existing agent process directly:
+
+```bash
+# Capture Python, Node, Go, or compiled binaries
+agentpcap run -- python agent.py
+agentpcap run -- ./my-agent-binary
+```
+
+AgentPCAP sets up local proxy and OTLP listeners, injects standard environment variables (`HTTP_PROXY`, `OTEL_EXPORTER_OTLP_ENDPOINT`), executes your agent safely via native argument slices, and streams telemetry live.
 
 ---
 
-## 📸 Real UI in Action
+## 5. Live Topology
 
-### 1. Live Agent Topology
-
-*Visual graph of agents, MCP servers, models, and external tools with animated request pulses and click-to-inspect edge telemetry.*
+Inspect your multi-agent architecture as a dynamic, directional graph. Watch live request pulses travel between orchestrator agents, sub-agents, MCP servers, and LLM backends:
 
 ![AgentPCAP Live Topology](docs/assets/topology.png)
 
-### 2. Waterfall Execution Timeline & Critical Path
+---
 
-*Inspect nested parent-child task delegations, identify concurrent spans, and pinpoint the longest wall-clock execution bottleneck.*
+## 6. Waterfall
+
+Examine hierarchical parent-child delegation chains, track concurrent operations, and identify the exact critical path bottleneck dominating wall-clock latency:
 
 ![AgentPCAP Waterfall Timeline](docs/assets/waterfall.png)
 
-### 3. Hierarchical Cost & Token Flamegraphs
+---
 
-*Instantly identify which agent, model, or tool call dominated your token budget or cloud spend.*
+## 7. Packet Inspector
+
+Inspect every captured packet with Wireshark-style tabular clarity. View timestamps, protocol layers, endpoints, latencies, token consumption, and sanitized payloads:
+
+![AgentPCAP Packet Inspector](docs/assets/packets.png)
+
+---
+
+## 8. Cost/Token Flamegraph
+
+Visualize resource consumption across your agent network in four distinct views: `TIME`, `COST`, `TOKENS`, and `ERRORS`. Clearly see which agent or tool call consumed your budget:
 
 ![AgentPCAP Cost Flamegraph](docs/assets/flamegraph_cost.png)
 
 ---
 
-## 🚀 Quickstart
+## 9. Diff
 
-### Option A: Try the Instant Multi-Agent Demo (No API Keys Required)
-
-AgentPCAP includes an offline, deterministic simulation of a multi-agent workflow (finance agent, research agent, procurement agent, MCP analytics server, and simulated Gemini LLM):
-
-```bash
-# Build or download the binary, then run:
-agentpcap demo
-```
-
-Your browser automatically opens to `http://127.0.0.1:9477`.
-
-### Option B: Capture Your Own Agent
-
-```bash
-# Wrap your existing agent process
-agentpcap run -- ./my-agent
-
-# Or capture Python / Node / Go scripts
-agentpcap run -- python main.py
-```
-
-AgentPCAP sets up local proxy listeners, injects standard `HTTP_PROXY` and `OTEL_EXPORTER_OTLP_ENDPOINT` environment variables, launches the child process safely, and streams events live to the viewer.
-
----
-
-## 🔍 What AgentPCAP Sees
-
-| Protocol Layer | What It Sees | Protocol Support Status |
-| :--- | :--- | :--- |
-| **A2A (Agent-to-Agent)** | Agent discovery, task requests, delegations, streaming responses, artifacts, cancellation | **SUPPORTED** (v1.0) |
-| **MCP (Model Context Protocol)** | Server initialize, `tools/list`, `tools/call`, tool results, JSON-RPC errors | **SUPPORTED** (2024-11-05 & current) |
-| **Model Providers** | Google Gemini / Vertex AI, OpenAI-compatible `/v1/...`, Anthropic Claude, generic LLM HTTP | **SUPPORTED** (Token usage & latency) |
-| **Tool Calls** | Unified normalized tool invocations, SHA-256 argument fingerprints | **SUPPORTED** (Zero secret leaks) |
-| **OpenTelemetry (OTel)** | Ingests OTLP/HTTP traces (`/v1/traces`), translates GenAI semantic conventions | **SUPPORTED** (OTLP JSON import/export) |
-| **Generic HTTP** | Standard outgoing HTTP request methods, response status codes, timing | **SUPPORTED** (Metadata only) |
-
----
-
-## 🧠 Deterministic Pathology Detection (`agentpcap explain`)
-
-AgentPCAP analyzes captured traces offline **without requiring an LLM**. It runs deterministic graph heuristics across the event DAG:
-
-```bash
-agentpcap explain demo.apcap
-```
-
-```text
-AGENTPCAP EXPLAIN REPORT
-======================================================================
-Capture ID:    demo-multi-agent-session
-Duration:      1.10s
-Events:        13
-Critical Path: 950ms (86.4% of total time)
-Bottleneck:    model-simulated-gemini (950ms)
-
-PATHOLOGY FINDINGS (2 detected):
-----------------------------------------------------------------------
-[HIGH] RETRY_STORM (Confidence: 0.90)
-  Operation "model.generateContent" executed 3 consecutive times with failures before succeeding.
-  Evidence:
-    - Attempt 1: Rate limit exceeded (429) (took 150ms)
-    - Attempt 2: Service temporarily unavailable (503) (took 300ms)
-    - Attempt 3: Succeeded (took 500ms)
-  Action: Inspect rate limits and exponential backoff configuration on simulated-gemini.
-
-[MEDIUM] DUPLICATE_DISCOVERY (Confidence: 0.85)
-  Repeated MCP tools discovery requested 3 times within 1.1s.
-  Evidence:
-    - MCP tools/list executed redundantly 3 times on server "mcp-analytics"
-  Action: Cache tool definitions on client startup to avoid repeated round-trips.
-```
-
-### Visual Pathology Inspector
-The embedded viewer surfaces detected pathologies with severity badges, confidence ratings, and direct links to implicated events:
-
-![AgentPCAP Pathology Findings](docs/assets/findings.png)
-
----
-
-## ⚖️ Capture Diffing (`agentpcap diff`)
-
-Compare two `.apcap` runs side-by-side to catch latency regressions, token bloat, or new retry storms:
+Compare two agent runs side-by-side in your terminal or web viewer to immediately identify latency regressions, token drift, and new error conditions:
 
 ```bash
 agentpcap diff baseline.apcap candidate.apcap
@@ -152,44 +112,105 @@ agentpcap diff baseline.apcap candidate.apcap
 
 ```text
 AGENT RUN DIFF
-======================================================================
-METRIC                   BASELINE          CANDIDATE              DIFF
-----------------------------------------------------------------------
-Total Duration              8.20s              4.10s            -50.0%
-Total Events                   24                 15            -37.5%
-Total Tokens               21,440             13,210            -38.4%
-Total Cost                 $0.120             $0.074            -38.3%
-Error Count                     3                  0           -100.0%
 
-KEY CHANGES:
-- Gemini retry storm resolved (3 retries -> 0 retries)
-- Redundant MCP tools/list calls eliminated (4 calls -> 1 call)
+                BEFORE      AFTER       DIFF
+Latency           8.2s       4.1s     -50.0%
+Model calls          8          5     -37.5%
+Tool calls          12          7     -41.6%
+Retries               3          0    -100.0%
+Tokens             21k        13k     -38.1%
+
+CHANGED
+- Gemini retry ×3
++ Gemini retry ×0
+- MCP tools/list ×4
++ MCP tools/list ×1
 ```
-
-The web viewer also includes an interactive visual diff mode:
 
 ![AgentPCAP Visual Diff](docs/assets/diff.png)
 
 ---
 
-## 🔒 Privacy & Security Defaults
+## 10. Explain
 
-AgentPCAP is built for sensitive enterprise and development environments:
+Diagnose performance bottlenecks and execution pathologies offline **without calling an external LLM**:
 
-1. **Local-First**: Captures remain on your machine. AgentPCAP includes **zero telemetry** and requires no account or cloud connection.
-2. **Metadata-Only Default**: By default, AgentPCAP records only timing, token counts, protocols, models, tools, and error status codes. Raw prompts, LLM completion texts, and raw tool arguments are **never** stored on disk unless explicitly requested via `--capture-content`.
-3. **Automated Secret Redaction**: Built-in scrubbing engine strips Google AI keys (`AIza*`), OpenAI keys (`sk-*`), Anthropic keys (`sk-ant-*`), GitHub tokens, JWTs, and `Authorization: Bearer` headers.
-4. **Strict Loopback Binding**: Defaults to `127.0.0.1`. Binding to external interfaces requires an explicit `--listen` flag.
-5. **Safe Process Execution**: `agentpcap run` invokes child commands via native `os/exec` slices—never via shell string interpolation.
-6. **Hardened File Parser**: The `.apcap` archive reader enforces Zip-slip traversal prevention and strict 128 MB/256 MB decompression bomb limits.
+```bash
+agentpcap explain run.apcap
+```
 
-See [SECURITY.md](docs/SECURITY.md) and [THREAT_MODEL.md](docs/THREAT_MODEL.md) for detailed invariants.
+```text
+LIKELY BOTTLENECK
+Gemini request #3 accounted for 72% of wall-clock time.
+
+CAUSE CHAIN
+finance-agent
+└─ research-agent
+   └─ analytics MCP
+      └─ model retry ×3
+
+OBSERVATIONS
+• Three equivalent model attempts observed
+• Retries added 4.8s to critical path
+• MCP server latency was negligible (<12ms)
+
+SUGGESTED INVESTIGATION
+Review research-agent retry backoff policy on 429 rate limit responses.
+```
+
+![AgentPCAP Findings](docs/assets/findings.png)
 
 ---
 
-## 🏗️ Architecture
+## 11. Protocol Support
 
-AgentPCAP runs as a single compiled Go binary embedding a high-performance React web viewer:
+AgentPCAP provides native protocol decoding for verified specifications:
+
+| Protocol | Specification Version | Capture Mode | Decode | Streaming | Status |
+| :--- | :--- | :--- | :---: | :---: | :---: |
+| **MCP** | 2024-11-05 & current | Proxy / stdio | Yes | Yes | Supported |
+| **A2A** | v0.1 & current drafts | Proxy / SDK | Yes | Yes | Supported |
+| **OTLP / HTTP** | OpenTelemetry GenAI semconv | OTLP Ingest (`/v1/traces`) | Yes | Yes | Supported |
+| **Google Gemini** | Generative Language REST | Reverse / Forward Proxy | Yes | Yes | Supported |
+| **OpenAI** | `/v1/chat/completions` | Reverse / Forward Proxy | Yes | Yes | Supported |
+| **Anthropic** | `/v1/messages` | Reverse / Forward Proxy | Yes | Yes | Supported |
+
+---
+
+## 12. `.apcap`
+
+All captures are stored in the standardized `.apcap` format—an open, containerized ZIP archive:
+
+```text
+capture.apcap (ZIP container)
+├── manifest.json       # Capture metadata, SHA-256 hashes, protocol index
+├── metadata.json       # High-level aggregate metrics (tokens, costs, errors)
+├── events.jsonl        # Line-delimited canonical event stream
+└── attachments/        # Optional sanitized payloads and forensic artifacts
+```
+
+- Complete Specification: [`spec/README.md`](spec/README.md)
+- JSON Schema: [`spec/apcap.schema.json`](spec/apcap.schema.json)
+- Canonical Test Vectors: [`spec/vectors/`](spec/vectors/)
+
+---
+
+## 13. Privacy
+
+AgentPCAP is engineered for privacy and security:
+
+- **Local by Default**: Captures remain strictly on your local machine. Zero telemetry, zero cloud tracking, zero phone-home behavior.
+- **Metadata-Only by Default**: Raw prompts, completions, and tool arguments are never persisted unless `--capture-content` is explicitly set.
+- **Centralized Redaction**: Automated scrubbing engine strips Google AI keys (`AIza*`), OpenAI keys (`sk-*`), Anthropic keys (`sk-ant-*`), GitHub tokens, JWTs, and Bearer authorization headers.
+- **Loopback Binding**: Listeners bind strictly to `127.0.0.1` by default.
+
+See [docs/PRIVACY.md](docs/PRIVACY.md) and [docs/SECURITY.md](docs/SECURITY.md) for full details.
+
+---
+
+## 14. Architecture
+
+AgentPCAP executes as a single compiled Go binary embedding a high-performance React + TypeScript web viewer:
 
 ```text
                Target Agent Process (Python, Node, Go, Binary)
@@ -221,73 +242,102 @@ CLI Tools               CI Check              │ React Viewer UI │
                                               └─────────────────┘
 ```
 
----
-
-## 📦 The Open `.apcap` Format
-
-AgentPCAP captures are stored in the standardized `.apcap` container—a portable, streaming ZIP bundle:
-
-```text
-my-run.apcap
-├── manifest.json       # Session metadata, integrity hashes, protocol summary
-├── events.jsonl        # Normalized event records (one JSON object per line)
-├── metadata.json       # Host and environment context
-└── attachments/        # Optional sanitized payloads and export artifacts
-```
-
-Formal JSON Schema: [`spec/apcap.schema.json`](spec/apcap.schema.json)  
-Specification Guide: [`spec/README.md`](spec/README.md)
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for deep-dive technical design documents.
 
 ---
 
-## 🛠️ CLI Command Reference
+## 15. Installation
 
-```text
-agentpcap <command> [flags]
+### Pre-Built Binaries
 
-COMMANDS:
-  run -- <cmd>              Launch child process under proxy/OTel capture
-  demo                      Launch simulated multi-agent offline workflow
-  open <file.apcap>         Serve and open capture file in local web viewer
-  proxy                     Run explicit HTTP/CONNECT forward capture proxy
-  otlp                      Run OTLP/HTTP trace receiver (/v1/traces)
-  explain <file.apcap>      Run deterministic offline diagnostics and critical path analysis
-  diff <file1> <file2>      Compare two captures (terminal table or --json)
-  check <file.apcap>        Evaluate capture against CI quality gate rules (.agentpcap.yml)
-  summary <file.apcap>      Display formatted terminal metrics summary
-  top <file.apcap>          Show top consumers by latency, tokens, cost, or errors
-  report <file.apcap>       Export standalone self-contained offline HTML report
-  validate <file.apcap>     Validate capture integrity against schema and SHA-256 hashes
-  redact <in> -o <out>      Scrub secrets and tokens from existing capture
-  inspect-redaction <file>  Scan capture for potential unredacted API keys or secrets
-  export otlp <file.apcap>  Export capture events to standard OpenTelemetry JSON
-  doctor                    Verify local environment, ports, and parser status
-  version                   Print version and build metadata
-```
+Download the standalone executable for your operating system from [GitHub Releases](https://github.com/agentpcap/agentpcap/releases):
 
----
+- Linux (`amd64`, `arm64`)
+- macOS (`arm64`, `amd64`)
+- Windows (`amd64`)
 
-## 💻 Building from Source
-
-Prerequisites: **Go 1.22+** and **Node.js 20+** (with `pnpm`):
+Verify the cryptographic SHA-256 hash:
 
 ```bash
-# 1. Clone repository
+sha256sum -c checksums.txt
+```
+
+### Install via Go
+
+```bash
+go install github.com/agentpcap/agentpcap/cmd/agentpcap@v1.0.0
+```
+
+### Build from Source
+
+```bash
 git clone https://github.com/agentpcap/agentpcap.git
 cd agentpcap
-
-# 2. Build web assets & compile static Go binary
 make web
 make build
-
-# 3. Verify tests and run demo
-make test
-./agentpcap demo
+./agentpcap doctor
 ```
 
 ---
 
-## 📄 License
+## 16. CI
 
-AgentPCAP is open-source software licensed under the [Apache License, Version 2.0](LICENSE).
-The `.apcap` format specification is dedicated to the open-source community for royalty-free implementation.
+Integrate AgentPCAP into continuous integration pipelines to assert budget and reliability gates:
+
+```bash
+# Assert thresholds defined in .agentpcap.yml
+agentpcap check run.apcap
+```
+
+Sample `.agentpcap.yml`:
+
+```yaml
+version: "1"
+assertions:
+  max_duration_seconds: 15.0
+  max_total_tokens: 50000
+  max_estimated_cost_usd: 0.25
+  disallow_pathologies:
+    - RETRY_STORM
+    - AGENT_LOOP
+```
+
+See [docs/CI.md](docs/CI.md) for GitHub Actions and GitLab CI integration templates.
+
+---
+
+## 17. Known Limitations
+
+To maintain clear technical boundaries, AgentPCAP explicitly documents non-goals:
+
+- **No Transparent Encrypted TLS Decryption**: Target applications must accept standard `HTTP_PROXY`/`HTTPS_PROXY` environment variables, point base URLs to local ports, export OTLP, or use `pkg/sdk`.
+- **Static Pricing Catalog**: Token costs are estimated from embedded pricing snapshots unless reported directly by provider response metadata.
+- **In-Memory Ring Buffer**: Ultra-large captures (>250,000 events) should stream directly to disk using `--output` and be inspected offline.
+
+See [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) and [docs/V1_SCOPE.md](docs/V1_SCOPE.md).
+
+---
+
+## 18. Contributing
+
+Contributions are welcome across protocol adapters, analyzer rules, and documentation.
+
+```bash
+# Run unit tests
+go test -v ./...
+
+# Run race condition checks
+go test -race ./...
+
+# Run protocol torture suite
+go test -v ./tests/torture
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+
+---
+
+## 19. License
+
+AgentPCAP is open source licensed under the [Apache License, Version 2.0](LICENSE).
+The `.apcap` specification is open and royalty-free.

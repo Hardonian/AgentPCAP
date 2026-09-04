@@ -43,10 +43,25 @@ doctor:
 	go run ./cmd/agentpcap doctor
 
 clean:
-	rm -f $(BINARY_NAME) $(BINARY_NAME).exe demo.apcap test_run.apcap report.html safe.apcap
-	rm -rf web/dist
+	rm -f $(BINARY_NAME) $(BINARY_NAME).exe demo.apcap test_run.apcap report.html safe.apcap demo_check.apcap
+	rm -rf web/dist dist
 
-release-check: web lint test test-race build
+release-build: web
+	@echo "Compiling release binaries..."
+	mkdir -p dist
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/agentpcap/agentpcap/internal/version.Version=1.0.0 -X github.com/agentpcap/agentpcap/internal/version.Commit=fa02f45 -X github.com/agentpcap/agentpcap/internal/version.BuildDate=2026-09-04" -o dist/agentpcap_1.0.0_windows_amd64.exe ./cmd/agentpcap
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/agentpcap/agentpcap/internal/version.Version=1.0.0 -X github.com/agentpcap/agentpcap/internal/version.Commit=fa02f45 -X github.com/agentpcap/agentpcap/internal/version.BuildDate=2026-09-04" -o dist/agentpcap_1.0.0_linux_amd64 ./cmd/agentpcap
+	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/agentpcap/agentpcap/internal/version.Version=1.0.0 -X github.com/agentpcap/agentpcap/internal/version.Commit=fa02f45 -X github.com/agentpcap/agentpcap/internal/version.BuildDate=2026-09-04" -o dist/agentpcap_1.0.0_linux_arm64 ./cmd/agentpcap
+	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/agentpcap/agentpcap/internal/version.Version=1.0.0 -X github.com/agentpcap/agentpcap/internal/version.Commit=fa02f45 -X github.com/agentpcap/agentpcap/internal/version.BuildDate=2026-09-04" -o dist/agentpcap_1.0.0_darwin_arm64 ./cmd/agentpcap
+	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/agentpcap/agentpcap/internal/version.Version=1.0.0 -X github.com/agentpcap/agentpcap/internal/version.Commit=fa02f45 -X github.com/agentpcap/agentpcap/internal/version.BuildDate=2026-09-04" -o dist/agentpcap_1.0.0_darwin_amd64 ./cmd/agentpcap
+
+release-check: web lint test test-race
+	@echo "Running spec and canonical vector verification..."
+	go test -v ./spec
+	@echo "Running protocol torture lab..."
+	go test -v ./tests/torture
+	@echo "Running independent third-party reader test..."
+	go test -v -run TestThirdPartyReader ./pkg/apcap
 	@echo "Running demo fixture verification..."
 	go run ./cmd/agentpcap demo --no-browser --output demo_check.apcap
 	go run ./cmd/agentpcap validate demo_check.apcap

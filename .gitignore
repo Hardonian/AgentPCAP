@@ -1,4 +1,4 @@
-# Binaries
+# Binaries & Packaging
 *.exe
 *.exe~
 *.dll
@@ -6,11 +6,14 @@
 *.dylib
 agentpcap
 bin/
+dist/
 
 # Temporary captures & reports
 *.apcap
 !examples/*.apcap
-report.html
+!spec/vectors/**/*.apcap
+*.html
+!web/**/*.html
 
 # Node & Frontend dependencies
 node_modules/

@@ -22,7 +22,7 @@ func TestSchema_VectorsConformance(t *testing.T) {
 		t.Fatalf("invalid json schema: %v", err)
 	}
 
-	vectors := []string{"minimal", "mcp", "a2a", "multi-agent", "errors", "incomplete"}
+	vectors := []string{"minimal", "mcp", "a2a", "otel", "multi-agent", "errors", "retries", "incomplete"}
 
 	for _, vName := range vectors {
 		t.Run(vName, func(t *testing.T) {

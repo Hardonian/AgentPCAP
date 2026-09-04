@@ -2,21 +2,17 @@
 
 ## Main Post
 
-Introducing **AgentPCAP** 🔍 — Wireshark for AI agents.
+I built Wireshark for AI agents.
 
-Capture A2A, MCP, model, and tool traffic in one local timeline. See the whole agent graph live.
+AgentPCAP captures A2A, MCP, model and tool traffic in one local timeline.
 
-• Single Go binary
-• Embedded DevTools viewer
-• Live topology + waterfall timeline
-• Cost flamegraph
-• Zero accounts, zero API keys
+One Go binary. No account.
 
-```bash
-agentpcap run -- ./my-agent
-```
+`agentpcap run -- ./my-agent`
 
-<https://github.com/agentpcap/agentpcap>
+Live topology • Waterfall • Cost flamegraph • Deterministic explain • Open .apcap format
+
+https://github.com/agentpcap/agentpcap
 
 ---
 

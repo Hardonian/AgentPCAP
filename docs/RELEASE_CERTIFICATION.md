@@ -35,7 +35,7 @@ Every invariant defined in `AGENTS.md` and `spec/README.md` is strictly enforced
 | **14** | **Race Condition Safety** | Fast producer / slow consumer backpressure, concurrent ingest, SSE broadcast safety under continuous Go race detector. | `go test -race ./...` (0 race conditions detected). | **PASS** |
 | **15** | **Fuzzing Suites** | Continuous fuzz testing for archive reading, MCP JSON-RPC parsing, A2A normalization, and secret scrubbing. | Fuzz targets executed >1,000,000 iterations across `pkg/apcap`, `mcp`, `a2a`, `redact`. | **PASS** |
 | **16** | **Clean-Room CLI Verification** | End-to-end execution of `doctor`, `demo`, `validate`, `explain`, `diff`, `report`, `redact`, `export`. | Clean execution of compiled `agentpcap.exe` binary on sample and generated captures. | **PASS** |
-| **17** | **Canonical Test Vectors** | 6 reference test vectors in `spec/vectors/` (`minimal`, `mcp`, `a2a`, `multi-agent`, `errors`, `incomplete`) with JSON schema verification. | `spec/vectors/README.md`, `spec/schema_test.go` verifies all vectors conform. | **PASS** |
+| **17** | **Canonical Test Vectors** | 8 reference test vectors in `spec/vectors/` (`minimal`, `mcp`, `a2a`, `otel`, `multi-agent`, `errors`, `retries`, `incomplete`) with JSON schema verification and independent third-party reader tests. | `spec/vectors/README.md`, `spec/schema_test.go`, `pkg/apcap/third_party_reader_test.go`. | **PASS** |
 | **18** | **Documentation Completeness** | All 16 architecture, specification, format, quickstart, security, threat model, and launch documents complete and cross-linked. | `README.md`, `docs/*.md`, `docs/launch/*.md`, `spec/README.md`. | **PASS** |
 
 ---
