@@ -3,6 +3,7 @@
 This directory provides standardized public test vectors for the **Agent Packet Capture (.apcap) v1.0** specification.
 
 Each test vector contains:
+
 1. `<name>.apcap`: The canonical containerized archive.
 2. `expected.json`: The expected normalized output after parsing the bundle according to `spec/apcap.schema.json`.
 

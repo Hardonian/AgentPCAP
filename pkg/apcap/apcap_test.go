@@ -3,7 +3,6 @@ package apcap_test
 import (
 	"archive/zip"
 	"bytes"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -181,7 +180,7 @@ func TestDecompressionBombDefense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _ = mw.Write([]byte(fmt.Sprintf(`{"format":"apcap","format_version":"1.0.0","capture_id":"c1","hashes":{}}`)))
+	_, _ = mw.Write([]byte(`{"format":"apcap","format_version":"1.0.0","capture_id":"c1","hashes":{}}`))
 
 	// Write massive events file using repetitive compressed bytes (a zip bomb)
 	ew, err := zw.Create("events.jsonl")

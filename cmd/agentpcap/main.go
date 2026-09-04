@@ -1,3 +1,5 @@
+
++`-++	1q	+121247
 package main
 
 import (
@@ -407,11 +409,15 @@ func handleOTLP(args []string) {
 
 func handleDiff(args []string) {
 	var jsonOutput bool
-	fs := flag.NewFlagSet("diff", flag.ExitOnError)
-	fs.BoolVar(&jsonOutput, "json", false, "Output as JSON")
-	_ = fs.Parse(args)
+	var files []string
+	for _, arg := range args {
+		if arg == "--json" || arg == "-json" {
+			jsonOutput = true
+		} else if !strings.HasPrefix(arg, "-") {
+			files = append(files, arg)
+		}
+	}
 
-	files := fs.Args()
 	if len(files) < 2 {
 		fmt.Fprintln(os.Stderr, "Usage: agentpcap diff before.apcap after.apcap [--json]")
 		os.Exit(1)
@@ -559,16 +565,21 @@ func handleVersion() {
 
 func handleSummary(args []string) {
 	var markdownOutput bool
-	fs := flag.NewFlagSet("summary", flag.ExitOnError)
-	fs.BoolVar(&markdownOutput, "markdown", false, "Output as Markdown table")
-	_ = fs.Parse(args)
+	var files []string
+	for _, arg := range args {
+		if arg == "--markdown" || arg == "-markdown" {
+			markdownOutput = true
+		} else if !strings.HasPrefix(arg, "-") {
+			files = append(files, arg)
+		}
+	}
 
-	if len(fs.Args()) == 0 {
+	if len(files) == 0 {
 		fmt.Fprintln(os.Stderr, "Usage: agentpcap summary <file.apcap> [--markdown]")
 		os.Exit(1)
 	}
 
-	cap := openCaptureOrExit(fs.Args()[0])
+	cap := openCaptureOrExit(files[0])
 
 	pEng := pathology.NewEngine()
 	findings := pEng.Analyze(cap.Events)
@@ -595,17 +606,29 @@ func handleSummary(args []string) {
 }
 
 func handleTop(args []string) {
-	var sortBy string
-	fs := flag.NewFlagSet("top", flag.ExitOnError)
-	fs.StringVar(&sortBy, "by", "latency", "Rank by: latency, calls, tokens, cost")
-	_ = fs.Parse(args)
+	sortBy := "latency"
+	var files []string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--by" || arg == "-by" {
+			if i+1 < len(args) {
+				sortBy = args[i+1]
+				i++
+			}
+		} else if strings.HasPrefix(arg, "--by=") || strings.HasPrefix(arg, "-by=") {
+			parts := strings.SplitN(arg, "=", 2)
+			sortBy = parts[1]
+		} else if !strings.HasPrefix(arg, "-") {
+			files = append(files, arg)
+		}
+	}
 
-	if len(fs.Args()) == 0 {
+	if len(files) == 0 {
 		fmt.Fprintln(os.Stderr, "Usage: agentpcap top <file.apcap> [--by latency|calls|tokens|cost]")
 		os.Exit(1)
 	}
 
-	cap := openCaptureOrExit(fs.Args()[0])
+	cap := openCaptureOrExit(files[0])
 
 	type opStat struct {
 		op       string
@@ -670,17 +693,29 @@ func handleTop(args []string) {
 }
 
 func handleCheck(args []string) {
-	var configPath string
-	fs := flag.NewFlagSet("check", flag.ExitOnError)
-	fs.StringVar(&configPath, "config", ".agentpcap.yml", "Path to config file")
-	_ = fs.Parse(args)
+	configPath := ".agentpcap.yml"
+	var files []string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--config" || arg == "-config" {
+			if i+1 < len(args) {
+				configPath = args[i+1]
+				i++
+			}
+		} else if strings.HasPrefix(arg, "--config=") || strings.HasPrefix(arg, "-config=") {
+			parts := strings.SplitN(arg, "=", 2)
+			configPath = parts[1]
+		} else if !strings.HasPrefix(arg, "-") {
+			files = append(files, arg)
+		}
+	}
 
-	if len(fs.Args()) == 0 {
+	if len(files) == 0 {
 		fmt.Fprintln(os.Stderr, "Usage: agentpcap check <file.apcap> [--config .agentpcap.yml]")
 		os.Exit(1)
 	}
 
-	cap := openCaptureOrExit(fs.Args()[0])
+	cap := openCaptureOrExit(files[0])
 
 	cfg, err := config.Load(configPath)
 	if err != nil {
