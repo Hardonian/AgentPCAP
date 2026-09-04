@@ -311,16 +311,11 @@ func handleDemo(args []string) {
 
 func handleOpen(args []string) {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: missing .apcap file path. Usage: agentpcap open <file.apcap>")
+		fmt.Fprintln(os.Stderr, "Usage: agentpcap open <file.apcap>")
 		os.Exit(1)
 	}
 	capFile := args[0]
-
-	parsedCap, err := apcap.Open(capFile)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed opening capture file: %v\n", err)
-		os.Exit(1)
-	}
+	parsedCap := openCaptureOrExit(capFile)
 
 	session := capture.NewSession(capture.SessionConfig{
 		CaptureID:   parsedCap.Manifest.CaptureID,
@@ -357,6 +352,10 @@ func handleProxy(args []string) {
 	fs.StringVar(&listenAddr, "listen", "127.0.0.1:8080", "Proxy listen address")
 	_ = fs.Parse(args)
 
+	if isExternalAddress(listenAddr) {
+		fmt.Printf("⚠️  SECURITY WARNING: Binding proxy to external address '%s'.\n", listenAddr)
+	}
+
 	session := capture.NewSession(capture.SessionConfig{
 		CaptureID:   fmt.Sprintf("proxy_%d", time.Now().Unix()),
 		CaptureMode: "proxy",
@@ -383,6 +382,10 @@ func handleOTLP(args []string) {
 	fs := flag.NewFlagSet("otlp", flag.ExitOnError)
 	fs.StringVar(&listenAddr, "listen", "127.0.0.1:4318", "OTLP HTTP listen address")
 	_ = fs.Parse(args)
+
+	if isExternalAddress(listenAddr) {
+		fmt.Printf("⚠️  SECURITY WARNING: Binding OTLP receiver to external address '%s'.\n", listenAddr)
+	}
 
 	session := capture.NewSession(capture.SessionConfig{
 		CaptureID:   fmt.Sprintf("otlp_%d", time.Now().Unix()),
@@ -414,16 +417,8 @@ func handleDiff(args []string) {
 		os.Exit(1)
 	}
 
-	capA, err := apcap.Open(files[0])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error opening %s: %v\n", files[0], err)
-		os.Exit(1)
-	}
-	capB, err := apcap.Open(files[1])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error opening %s: %v\n", files[1], err)
-		os.Exit(1)
-	}
+	capA := openCaptureOrExit(files[0])
+	capB := openCaptureOrExit(files[1])
 
 	res := diff.Compare(capA, capB)
 	if jsonOutput {
@@ -440,18 +435,69 @@ func handleExplain(args []string) {
 		os.Exit(1)
 	}
 
-	cap, err := apcap.Open(args[0])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error opening %s: %v\n", args[0], err)
-		os.Exit(1)
-	}
+	cap := openCaptureOrExit(args[0])
 
 	cp := analyzer.AnalyzeCriticalPath(cap.Events)
-	fmt.Print(cp.FormatTerminal())
-
 	pEng := pathology.NewEngine()
 	findings := pEng.Analyze(cap.Events)
-	fmt.Print(pathology.FormatTerminal(findings))
+
+	fmt.Printf("\nAGENTPCAP EXPLAIN: %s\n", cap.Manifest.CaptureID)
+	fmt.Println("======================================================================")
+
+	// 1. LIKELY BOTTLENECK
+	fmt.Println("\nLIKELY BOTTLENECK")
+	fmt.Println("----------------------------------------------------------------------")
+	if cp.DominantEvent.EventID != "" {
+		fmt.Printf("• %s (%s)\n  Duration: %.1fms (%.1f%% of wall-clock time)\n  Status: %s\n",
+			cp.DominantEvent.Operation, cp.DominantEvent.Protocol,
+			cp.DominantEvent.DurationMs, cp.DominantEvent.PercentOfTotal,
+			cp.DominantEvent.Status)
+	} else {
+		fmt.Println("• No single dominant bottleneck identified.")
+	}
+
+	// 2. CAUSE CHAIN
+	fmt.Println("\nCAUSE CHAIN")
+	fmt.Println("----------------------------------------------------------------------")
+	if len(cp.Steps) > 0 {
+		chain := make([]string, 0, len(cp.Steps))
+		for _, s := range cp.Steps {
+			chain = append(chain, fmt.Sprintf("%s (%.1fms)", s.Operation, s.DurationMs))
+		}
+		fmt.Println("  " + strings.Join(chain, "\n  ↳ "))
+	} else {
+		fmt.Println("• Execution graph has no serialized cause chain.")
+	}
+
+	// 3. OBSERVATIONS
+	fmt.Println("\nOBSERVATIONS")
+	fmt.Println("----------------------------------------------------------------------")
+	fmt.Printf("• Wall-Clock Duration: %.2fs\n", cap.Metadata.TotalDurationMs/1000.0)
+	fmt.Printf("• Total Events:        %d (with %d errors)\n", len(cap.Events), cap.Metadata.ErrorCount)
+	fmt.Printf("• Total Tokens:        %d\n", cap.Metadata.TotalTokens.TotalTokens)
+	fmt.Printf("• Estimated Cost:      $%.4f USD\n", cap.Metadata.TotalCost)
+	if len(findings) > 0 {
+		fmt.Printf("• Pathologies:         %d detected\n", len(findings))
+		for _, f := range findings {
+			fmt.Printf("  [%s] %s: %s\n", f.Severity, f.Type, f.Title)
+		}
+	} else {
+		fmt.Println("• Pathologies:         0 detected (clean execution pattern)")
+	}
+
+	// 4. SUGGESTED INVESTIGATION
+	fmt.Println("\nSUGGESTED INVESTIGATION")
+	fmt.Println("----------------------------------------------------------------------")
+	if len(findings) > 0 {
+		for i, f := range findings {
+			fmt.Printf("%d. %s\n   Action: %s\n", i+1, f.Title, f.SuggestedFix)
+		}
+	} else if cp.DominantEvent.EventID != "" {
+		fmt.Printf("1. Inspect '%s' for potential asynchronous caching or parallelization opportunities.\n", cp.DominantEvent.Operation)
+	} else {
+		fmt.Println("• Performance appears nominal. No immediate action required.")
+	}
+	fmt.Println()
 }
 
 func handleDoctor(_ []string) {
@@ -461,9 +507,9 @@ func handleDoctor(_ []string) {
 	// Check web viewer assets
 	webFS := web.GetFS()
 	if _, err := webFS.Open("index.html"); err == nil {
-		fmt.Println("✓ embedded viewer assets: OK")
+		fmt.Println("✓ viewer assets: OK")
 	} else {
-		fmt.Println("✗ embedded viewer assets: MISSING")
+		fmt.Println("✗ viewer assets: MISSING")
 	}
 
 	// Check local port availability
@@ -475,15 +521,36 @@ func handleDoctor(_ []string) {
 		fmt.Println("! default viewer port 9477: OCCUPIED (auto-collision discovery active)")
 	}
 
-	fmt.Println("✓ local capture engine: READY")
-	fmt.Println("✓ OTLP/HTTP receiver: READY")
-	fmt.Println("✓ MCP JSON-RPC 2.0 parser: READY")
-	fmt.Println("✓ A2A protocol parser: READY")
-	fmt.Println("✓ Model adapters (Gemini, OpenAI, Anthropic): READY")
-	fmt.Println("✓ Secret redaction engine: READY")
-	fmt.Println("\n○ Cloud accounts / credentials: not required")
-	fmt.Println("○ External database server: not required")
-	fmt.Println("\nStatus: READY FOR LOCAL OPERATION")
+	fmt.Println("✓ capture engine: READY")
+	fmt.Println("✓ .apcap reader/writer: READY")
+	fmt.Println("✓ MCP parser: READY")
+	fmt.Println("✓ A2A parser: READY")
+	fmt.Println("✓ OTLP receiver: READY")
+	fmt.Println("✓ redaction: READY")
+
+	fmt.Println()
+	if os.Getenv("GEMINI_API_KEY") != "" {
+		fmt.Println("✓ Gemini integration: configured (GEMINI_API_KEY)")
+	} else {
+		fmt.Println("○ Gemini integration: not configured (optional)")
+	}
+	if os.Getenv("VERTEXAI_PROJECT") != "" || os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") != "" {
+		fmt.Println("✓ Vertex integration: configured")
+	} else {
+		fmt.Println("○ Vertex integration: not configured (optional)")
+	}
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		fmt.Println("✓ OpenAI integration: configured (OPENAI_API_KEY)")
+	} else {
+		fmt.Println("○ OpenAI integration: not configured (optional)")
+	}
+	if os.Getenv("ANTHROPIC_API_KEY") != "" {
+		fmt.Println("✓ Anthropic integration: configured (ANTHROPIC_API_KEY)")
+	} else {
+		fmt.Println("○ Anthropic integration: not configured (optional)")
+	}
+
+	fmt.Println("\nCore AgentPCAP is ready.")
 }
 
 func handleVersion() {
@@ -501,11 +568,7 @@ func handleSummary(args []string) {
 		os.Exit(1)
 	}
 
-	cap, err := apcap.Open(fs.Args()[0])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
+	cap := openCaptureOrExit(fs.Args()[0])
 
 	pEng := pathology.NewEngine()
 	findings := pEng.Analyze(cap.Events)
@@ -542,11 +605,7 @@ func handleTop(args []string) {
 		os.Exit(1)
 	}
 
-	cap, err := apcap.Open(fs.Args()[0])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
+	cap := openCaptureOrExit(fs.Args()[0])
 
 	type opStat struct {
 		op       string
