@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-09-04
 
 ### Added
+
 - **Core Engine & Single Binary Distribution**:
   - Pure Go binary embedding compiled React + Vite + TypeScript web viewer via `go:embed`.
   - Zero runtime dependencies on Node.js, Python, Docker, or external databases.

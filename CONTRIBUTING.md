@@ -73,6 +73,7 @@ pnpm lint
 ## Code Quality Standards
 
 Before submitting a pull request:
+
 - Run `go fmt ./...` and `go vet ./...`.
 - Ensure `go test -race ./...` passes without errors.
 - Ensure all new public types and methods in `pkg/apcap` and `pkg/sdk` are well-documented.
