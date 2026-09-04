@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-go:
+    name: Go Tests & Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Verify Formatting & Vetting
+        run: |
+          test -z $(gofmt -l .)
+          go vet ./...
+
+      - name: Run Unit Tests with Race Detection
+        run: |
+          go test -race -v ./...
+
+      - name: Run Fuzz Tests
+        run: |
+          go test -fuzz=FuzzApcapReader ./pkg/apcap -fuzztime=10s
+
+  test-frontend:
+    name: Frontend Build & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Dependencies
+        working-directory: ./web
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck Frontend
+        working-directory: ./web
+        run: pnpm typecheck
+
+      - name: Lint Frontend
+        working-directory: ./web
+        run: pnpm lint
+
+      - name: Build Web Assets
+        working-directory: ./web
+        run: pnpm build
+
+  build-binary:
+    name: Build & Verify Single Binary
+    needs: [test-go, test-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Set up Node.js & pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Build Web Assets
+        working-directory: ./web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Compile AgentPCAP Binary
+        run: |
+          go build -ldflags="-s -w -X main.version=1.0.0" -o bin/agentpcap ./cmd/agentpcap
+
+      - name: Smoke Test CLI
+        run: |
+          ./bin/agentpcap version
+          ./bin/agentpcap doctor
+          ./bin/agentpcap demo --no-browser --output demo_ci.apcap &
+          DEMO_PID=$!
+          sleep 4
+          kill -SIGINT $DEMO_PID || true
+          ./bin/agentpcap summary demo_ci.apcap
+          ./bin/agentpcap explain demo_ci.apcap
+          ./bin/agentpcap validate demo_ci.apcap
+          ./bin/agentpcap check demo_ci.apcap
