@@ -168,6 +168,16 @@ func handleRun(args []string) {
 		outputPath = fmt.Sprintf("capture_%d.apcap", time.Now().Unix())
 	}
 
+	if captureContent {
+		fmt.Println("⚠️  CONTENT CAPTURE ACTIVE: Payloads and tool arguments will be recorded. Centralized secret scrubbing will sanitize credentials.")
+	}
+	if isExternalAddress(listenAddr) {
+		fmt.Printf("⚠️  SECURITY WARNING: Binding web viewer to external address '%s'. Captures may be accessible on the local network.\n", listenAddr)
+	}
+	if isExternalAddress(proxyAddr) {
+		fmt.Printf("⚠️  SECURITY WARNING: Binding proxy to external address '%s'.\n", proxyAddr)
+	}
+
 	// 1. Initialize Capture Session
 	session := capture.NewSession(capture.SessionConfig{
 		CaptureID:      fmt.Sprintf("cap_%d", time.Now().Unix()),
@@ -247,6 +257,10 @@ func handleDemo(args []string) {
 
 	fmt.Println("AgentPCAP Demo — Local Multi-Agent Simulation")
 	fmt.Println("--------------------------------------------")
+
+	if isExternalAddress(listenAddr) {
+		fmt.Printf("⚠️  SECURITY WARNING: Binding web viewer to external address '%s'. Captures may be accessible on the local network.\n\n", listenAddr)
+	}
 
 	session := capture.NewSession(capture.SessionConfig{
 		CaptureID:   "cap_demo_simulation",
@@ -774,6 +788,27 @@ func truncateString(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen-1] + "…"
+}
+
+func openCaptureOrExit(filePath string) *apcap.Capture {
+	cap, err := apcap.Open(filePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Failed to open capture file '%s'.\n\nDetails:\n  %v\n\nTry:\n  agentpcap validate %s\n", filePath, err, filePath)
+		os.Exit(1)
+	}
+	return cap
+}
+
+func isExternalAddress(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+	}
+	host = strings.TrimSpace(strings.ToLower(host))
+	if host == "" || host == "127.0.0.1" || host == "localhost" || host == "::1" {
+		return false
+	}
+	return true
 }
 
 // Dummy helpers
