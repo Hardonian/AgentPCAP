@@ -1,6 +1,7 @@
 package redact_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/agentpcap/agentpcap/internal/redact"
@@ -10,12 +11,13 @@ import (
 func TestRedactor(t *testing.T) {
 	r := redact.New()
 
-	// gitleaks:allow
-	// gitguardian:ignore
 	// Synthetic mock tokens used exclusively for testing regex scrubbing
 	mockGoogleKey := "AI" + "za" + "MockTestTokenScrubbingUnitTest12345"
 	mockOpenAIKey := "sk-" + "MockOpenAITestKey1234567890abcdef"
 	mockAnthropicKey := "sk-ant-api03-" + "MockAnthropicTestKey1234567890abcdef"
+	mockAWSKey := "AKIA" + "IOSFODNN7EXAMPLE"
+	mockGitHubToken := "ghp_" + "123456789012345678901234567890123456"
+	mockPrivateKey := "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC...\n-----END PRIVATE KEY-----"
 
 	tests := []struct {
 		name     string
@@ -38,6 +40,16 @@ func TestRedactor(t *testing.T) {
 			expected: "anthropic secret [REDACTED_ANTHROPIC_KEY]",
 		},
 		{
+			name:     "AWS Access Key",
+			input:    "AWS creds: " + mockAWSKey,
+			expected: "AWS creds: [REDACTED_AWS_KEY]",
+		},
+		{
+			name:     "GitHub Token",
+			input:    "github token " + mockGitHubToken,
+			expected: "github token [REDACTED_GITHUB_TOKEN]",
+		},
+		{
 			name:     "Bearer Token",
 			input:    "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdef",
 			expected: "Authorization: Bearer [REDACTED_TOKEN]",
@@ -46,6 +58,11 @@ func TestRedactor(t *testing.T) {
 			name:     "Database URI",
 			input:    "connecting to postgres://admin:supersecretpassword@db.internal:5432/agents",
 			expected: "connecting to postgres://[USER]:[REDACTED_PASS]@db.internal:5432/agents",
+		},
+		{
+			name:     "Private Key PEM Block",
+			input:    "key data:\n" + mockPrivateKey + "\nend",
+			expected: "key data:\n[REDACTED_PRIVATE_KEY]\nend",
 		},
 	}
 
@@ -59,7 +76,40 @@ func TestRedactor(t *testing.T) {
 	}
 }
 
-func TestRedactEvent(t *testing.T) {
+func TestRedactMapAndSlice(t *testing.T) {
+	r := redact.New()
+	mockKey := "sk-" + "MockKey1234567890abcdef12345678"
+
+	input := map[string]any{
+		"safe_field": "hello world",
+		"auth_token": "secret_token_val", // matches sensitive key "token"
+		"nested": map[string]any{
+			"url": "https://api.openai.com?key=" + mockKey,
+		},
+		"list": []any{
+			"item with " + mockKey,
+			map[string]any{"api_key": "val"},
+		},
+	}
+
+	cleaned := r.RedactMap(input)
+
+	if cleaned["auth_token"] != "[REDACTED_SENSITIVE_FIELD]" {
+		t.Errorf("auth_token not scrubbed: %v", cleaned["auth_token"])
+	}
+
+	nested, ok := cleaned["nested"].(map[string]any)
+	if !ok || strings.Contains(nested["url"].(string), mockKey) {
+		t.Errorf("nested map not scrubbed: %+v", nested)
+	}
+
+	list, ok := cleaned["list"].([]any)
+	if !ok || strings.Contains(list[0].(string), mockKey) {
+		t.Errorf("list item not scrubbed: %+v", list)
+	}
+}
+
+func TestRedactEventAndCapture(t *testing.T) {
 	r := redact.New()
 	mockGoogleKey := "AI" + "za" + "MockTestTokenScrubbingUnitTest12345"
 	mockOpenAIKey := "sk-" + "MockOpenAITestKey1234567890abcdef"
@@ -86,6 +136,22 @@ func TestRedactEvent(t *testing.T) {
 	if redacted.Payload.Preview != "my api key is [REDACTED_GOOGLE_KEY] in body" {
 		t.Errorf("payload preview not scrubbed: %s", redacted.Payload.Preview)
 	}
+
+	// Full capture redaction
+	cap := &apcap.Capture{
+		Manifest: apcap.Manifest{
+			CaptureID:     "cap_test",
+			RedactionMode: "full_content",
+		},
+		Events: []apcap.Event{*ev},
+	}
+	cleanCap := r.RedactCapture(cap)
+	if cleanCap.Manifest.RedactionMode != "sanitized_content" {
+		t.Errorf("expected sanitized_content mode, got %s", cleanCap.Manifest.RedactionMode)
+	}
+	if len(cleanCap.Events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(cleanCap.Events))
+	}
 }
 
 func TestInspectSecrets(t *testing.T) {
@@ -97,5 +163,8 @@ func TestInspectSecrets(t *testing.T) {
 	}
 	if findings[0].PatternName != "OpenAI API Key" {
 		t.Errorf("unexpected pattern: %s", findings[0].PatternName)
+	}
+	if !strings.Contains(findings[0].Sample, "...") {
+		t.Errorf("expected masked sample, got %s", findings[0].Sample)
 	}
 }

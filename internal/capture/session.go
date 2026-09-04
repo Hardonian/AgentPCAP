@@ -146,8 +146,10 @@ func (s *Session) Subscribe() (chan apcap.Event, func()) {
 	unsubscribe := func() {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		delete(s.subscribers, ch)
-		close(ch)
+		if _, exists := s.subscribers[ch]; exists {
+			delete(s.subscribers, ch)
+			close(ch)
+		}
 	}
 
 	return ch, unsubscribe
@@ -192,6 +194,10 @@ func (s *Session) Close() error {
 	s.closed = true
 	s.manifest.CompletedAt = time.Now().UTC()
 	s.manifest.EventCount = len(s.events)
+	for ch := range s.subscribers {
+		delete(s.subscribers, ch)
+		close(ch)
+	}
 	s.mu.Unlock()
 
 	if s.cfg.OutputPath != "" {

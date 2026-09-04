@@ -64,7 +64,7 @@ func Run(ctx context.Context, cfg Config) (*Result, error) {
 	defer signal.Stop(sigCh)
 
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start command: %w", err)
+		return &Result{ExitCode: 1, Error: err}, fmt.Errorf("failed to start command: %w", err)
 	}
 
 	done := make(chan error, 1)
