@@ -680,11 +680,7 @@ func handleCheck(args []string) {
 		os.Exit(1)
 	}
 
-	cap, err := apcap.Open(fs.Args()[0])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
+	cap := openCaptureOrExit(fs.Args()[0])
 
 	cfg, err := config.Load(configPath)
 	if err != nil {
@@ -749,11 +745,7 @@ func handleRedact(args []string) {
 		os.Exit(1)
 	}
 
-	cap, err := apcap.Open(inputPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
+	cap := openCaptureOrExit(inputPath)
 
 	redactor := redact.New()
 	cleanCap := redactor.RedactCapture(cap)
@@ -772,11 +764,7 @@ func handleInspectRedaction(args []string) {
 		os.Exit(1)
 	}
 
-	cap, err := apcap.Open(args[0])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
+	cap := openCaptureOrExit(args[0])
 
 	redactor := redact.New()
 	totalFindings := 0
@@ -806,11 +794,7 @@ func handleExport(args []string) {
 		os.Exit(1)
 	}
 
-	cap, err := apcap.Open(args[1])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
+	cap := openCaptureOrExit(args[1])
 
 	otlpJSON, err := otlp.ExportCaptureToOTLP(cap)
 	if err != nil {
@@ -828,11 +812,7 @@ func handleReport(args []string) {
 		os.Exit(1)
 	}
 
-	cap, err := apcap.Open(inputPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
+	cap := openCaptureOrExit(inputPath)
 
 	if err := report.GenerateHTMLReport(cap, outputPath); err != nil {
 		fmt.Fprintf(os.Stderr, "Report generation failed: %v\n", err)
