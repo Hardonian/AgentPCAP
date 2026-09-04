@@ -10,11 +10,18 @@
 [![Status](https://img.shields.io/badge/Status-v1.0.0_Ready-emerald)](CHANGELOG.md)
 [![Privacy](https://img.shields.io/badge/Privacy-Metadata_Only_Default-green)](docs/PRIVACY.md)
 
+![AgentPCAP Illustrative Hero](docs/assets/hero.svg)
+
 ```bash
 agentpcap run -- ./my-agent
 ```
 
-![AgentPCAP Live Demo Walkthrough](docs/assets/agentpcap_demo.webp)
+<details>
+<summary>▶ <strong>Watch 10-Second Live Browser Session</strong></summary>
+
+![AgentPCAP Live Browser Session](docs/assets/agentpcap_demo.webp)
+
+</details>
 
 ---
 

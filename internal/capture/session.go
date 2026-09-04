@@ -209,8 +209,8 @@ func (s *Session) Reset() {
 	s.manifest.CompletedAt = time.Time{}
 	s.manifest.ProtocolsSeen = make([]apcap.Protocol, 0)
 	s.manifest.EventCount = 0
-	s.metadata.TotalEvents = 0
-	s.metadata.TotalTokens = 0
+	s.metadata.TotalDurationMs = 0
+	s.metadata.TotalTokens = apcap.TokenUsage{}
 	s.metadata.TotalCost = 0
 	s.metadata.ErrorCount = 0
 	s.metadata.AgentCount = 0
