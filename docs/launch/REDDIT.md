@@ -12,7 +12,8 @@ Existing tracing platforms are either heavy distributed tracing systems requirin
 
 I built **AgentPCAP**: an open-source, local-first packet capture and protocol analyzer designed specifically for AI agents.
 
-### What it does:
+## What it does
+
 - Single static Go binary with an embedded React web viewer. No Node, Python, or database required.
 - Ingests traffic via transparent HTTP proxy, OTLP receiver (`/v1/traces`), or a tiny Go SDK.
 - Live animated topology graph showing agents, models, tools, and MCP servers.
@@ -22,7 +23,8 @@ I built **AgentPCAP**: an open-source, local-first packet capture and protocol a
 - An open file format (`.apcap`) based on streaming ZIP with JSON manifests and JSONL event records.
 - Metadata-only by default: prompts and completions are discarded unless you explicitly pass `--capture-content`. Secrets (API keys, JWTs) are scrubbed automatically.
 
-### Test it in 10 seconds:
+## Test it in 10 seconds
+
 You can run the simulated offline multi-agent scenario with zero dependencies:
 
 ```bash
@@ -32,6 +34,6 @@ agentpcap demo
 
 Your browser opens to `http://127.0.0.1:9477` where you can inspect live A2A delegation, tool calls, retry storms, and the cost flamegraph.
 
-Repository & Format Spec: https://github.com/agentpcap/agentpcap
+Repository & Format Spec: <https://github.com/agentpcap/agentpcap>
 
 I'd really appreciate any feedback on the `.apcap` specification, parser coverage, or analyzer heuristics.

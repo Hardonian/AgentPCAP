@@ -15,10 +15,11 @@ Key highlights:
 • Local-first: no cloud account, no credit card, no external telemetry
 
 Try it in seconds:
+
 ```bash
 agentpcap demo
 ```
 
-Check out the project: https://github.com/agentpcap/agentpcap
+Check out the project: <https://github.com/agentpcap/agentpcap>
 
-#AI #OpenSource #SoftwareEngineering #Go #LLMOps #AgenticAI #DevTools
+Tags: #AI #OpenSource #SoftwareEngineering #Go #LLMOps #AgenticAI #DevTools

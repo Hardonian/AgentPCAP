@@ -5,6 +5,7 @@ Get started with AgentPCAP in under 60 seconds.
 ## 1. Installation
 
 ### Download Precompiled Binary
+
 Download the latest binary for your operating system from GitHub Releases, or compile directly:
 
 ```bash
@@ -15,6 +16,7 @@ make
 ```
 
 ### Verify Environment
+
 Run the diagnostic check to ensure all components are operational:
 
 ```bash
@@ -22,6 +24,7 @@ Run the diagnostic check to ensure all components are operational:
 ```
 
 Output:
+
 ```text
 AgentPCAP Doctor
 ================
@@ -63,6 +66,7 @@ Launch any agent executable or script as a child process:
 ```
 
 AgentPCAP will:
+
 1. Start the local capture engine and HTTP proxy.
 2. Inject `HTTP_PROXY` and `OTEL_EXPORTER_OTLP_ENDPOINT` into the child process.
 3. Open the live web viewer in your default browser.

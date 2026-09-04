@@ -3,6 +3,7 @@
 AgentPCAP provides multiple, complementary capture modes to balance convenience, fidelity, and security.
 
 ## Mode 1: Child Process Execution (`agentpcap run -- <cmd>`)
+
 **Recommended for development.**
 
 ```bash
@@ -19,6 +20,7 @@ agentpcap run -- ./my-agent
 ---
 
 ## Mode 2: Explicit Forward Proxy (`agentpcap proxy`)
+
 **Recommended for containers, VMs, and remote agent processes.**
 
 ```bash
@@ -32,6 +34,7 @@ agentpcap proxy --listen 127.0.0.1:8080
 ---
 
 ## Mode 3: OpenTelemetry Ingestion (`agentpcap otlp`)
+
 **Recommended for frameworks with native OTel support (LangChain, LlamaIndex, Semantic Kernel).**
 
 ```bash
@@ -44,6 +47,7 @@ agentpcap otlp --listen 127.0.0.1:4318
 ---
 
 ## Mode 4: Zero-Dependency Go SDK (`pkg/sdk`)
+
 **Recommended for Go agent authors desiring granular span control.**
 
 ```go
@@ -57,6 +61,7 @@ span.RecordToolCall("market_data_api", 45.0, false)
 ---
 
 ## Mode 5: Multi-Agent Simulation (`agentpcap demo`)
+
 **Deterministic local test harness.**
 
 ```bash

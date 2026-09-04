@@ -14,9 +14,10 @@ The AgentPCAP project treats security and privacy as non-negotiable core invaria
 Please **do not** open public GitHub issues for security vulnerabilities or potential secret leak exploits.
 
 Instead, please report security vulnerabilities privately via email to:
-**security@agentpcap.org** (or create a private GitHub Security Advisory).
+[security@agentpcap.org](mailto:security@agentpcap.org) (or create a private GitHub Security Advisory).
 
 Include:
+
 - A description of the issue and potential impact.
 - Clear reproduction steps or proof-of-concept capture (`.apcap`).
 - The version of AgentPCAP and environment details (OS, architecture).

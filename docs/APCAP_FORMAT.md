@@ -1,6 +1,6 @@
 # The Open .APCAP Format
 
-**Specification Version: 1.0.0**
+## Specification Version: 1.0.0
 
 `.apcap` (Agent Packet Capture) is an open, portable, and versioned container format for multi-agent traces, model calls, and protocol packets.
 

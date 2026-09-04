@@ -31,6 +31,7 @@ The core principle is:
 ## 2. Component Pipeline
 
 ### 2.1 Ingestion Layer
+
 1. **HTTP/HTTPS Forward Proxy (`internal/proxy`)**:
    - Intercepts outbound HTTP API requests (e.g. Gemini, OpenAI, Anthropic, REST tools).
    - Supports transparent TCP tunneling (`CONNECT`) for secure endpoints without TLS MITM interception.
@@ -45,6 +46,7 @@ The core principle is:
    - Optional in-code instrumentation for Go agent frameworks.
 
 ### 2.2 Normalization Layer
+
 - **MCP Parser (`internal/protocols/mcp`)**: Standards-aware JSON-RPC 2.0 parser extracting tools discovery, calls, parameters, and result status.
 - **A2A Parser (`internal/protocols/a2a`)**: Normalizes task creation, streaming updates, and multi-hop delegation chains.
 - **Model Provider Adapters (`internal/protocols/model`)**:
@@ -54,6 +56,7 @@ The core principle is:
 - **Tool Normalizer (`internal/protocols/tool`)**: Standardizes tool invocation signatures and generates SHA-256 fingerprints of inputs for duplicate detection without storing sensitive arguments.
 
 ### 2.3 Storage & Container Layer (`pkg/apcap`)
+
 - An `.apcap` file is a ZIP-compatible container housing:
   - `manifest.json`: Top-level metadata, protocols seen, and cryptographic SHA-256 hashes.
   - `metadata.json`: Aggregate metrics (total duration, tokens, cost, agent count).
@@ -64,6 +67,7 @@ The core principle is:
   - **Decompression Bomb Protection**: Bounded entry sizes (128 MB max entry, 256 MB total uncompressed).
 
 ### 2.4 Analyzer & Pathology Engine
+
 - **Critical Path (`internal/analyzer`)**: Computes the longest wall-clock execution path across asynchronous tasks to pinpoint latency bottlenecks.
 - **Pathology Detection (`internal/pathology`)**: Rule-based offline detection for:
   - `RETRY_STORM`: Rapid consecutive failed attempts on the same operation.
@@ -75,5 +79,6 @@ The core principle is:
   - `SLOW_TOOL` & `POSSIBLE_PARALLELIZATION`.
 
 ### 2.5 Presentation Layer
+
 - **Embedded Web Server (`internal/server`)**: Serves embedded React + TypeScript assets from `web.DistFS`.
 - **Live Stream**: Server-Sent Events (SSE) pushing packets in real time.

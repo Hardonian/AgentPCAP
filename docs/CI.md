@@ -38,12 +38,14 @@ agentpcap check test_run.apcap
 ```
 
 Output when passing:
+
 ```text
 AgentPCAP CI Check: PASS (test_run.apcap)
 No blocking pathology findings or budget limits exceeded.
 ```
 
 Output when failing:
+
 ```text
 AgentPCAP CI Check: FAIL (test_run.apcap)
 Violations:
